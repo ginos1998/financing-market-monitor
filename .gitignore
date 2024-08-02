@@ -21,4 +21,6 @@
 go.work
 go.work.sum
 
-*.env
+.env
+.env.processing
+.env.ingest
