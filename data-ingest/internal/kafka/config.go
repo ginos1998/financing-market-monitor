@@ -1,6 +1,8 @@
 package kafka
 
 import (
+	"errors"
+
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/ginos1998/financing-market-monitor/data-ingest/config"
 	
@@ -9,6 +11,9 @@ import (
 
 func CreateKafkaProducer() (*kafka.Producer, error) {
 	server := config.GetEnvVar("KAFKA_SERVER")
+	if server == "" {
+		return nil, errors.New("KAFKA_SERVER environment variable not set")
+	}
 
 	config := &kafka.ConfigMap{
 		"bootstrap.servers": server,

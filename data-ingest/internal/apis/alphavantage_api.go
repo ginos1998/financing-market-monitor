@@ -1,17 +1,18 @@
 package apis
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
-    "encoding/json"
-    "strconv"
+	"strconv"
 
 	appCfg "github.com/ginos1998/financing-market-monitor/data-ingest/config"
-    dtos "github.com/ginos1998/financing-market-monitor/data-ingest/internal/models/dtos"
-    utils "github.com/ginos1998/financing-market-monitor/data-ingest/internal/utils"
+	dtos "github.com/ginos1998/financing-market-monitor/data-ingest/internal/models/dtos"
+	utils "github.com/ginos1998/financing-market-monitor/data-ingest/internal/utils"
 
-    log "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 type AlphavantageAPI struct {
@@ -29,7 +30,7 @@ func (av *AlphavantageAPI) ConfigAlphavantageAPI(test bool) error {
 		testing = true
 		av.URI = "https://www.alphavantage.co/query"
 		av.APIKey = "demo"
-		av.RequestPerDay = 1000
+		av.RequestPerDay = 10000
 		av.DefaultSymbol = "IBM"
 		return nil
 	}
@@ -65,18 +66,34 @@ func (av *AlphavantageAPI) GetTickerDailyHistoricalData(ticker string) ([]byte, 
         return nil, errors.New("error getting data from Alpha Vantage, unexpected status code: " + resp.Status)
     }
 
+	data, err := decodeTickerDailyHistoricalData(resp.Body)
+	if err != nil {
+		return nil, errors.New("error decoding data from Alpha Vantage: " + err.Error())
+	}
+
+    jsonData, err := json.Marshal(data)
+    if err != nil {
+        return nil, errors.New("error marshalling data: " + err.Error())
+    }
+
+    return jsonData, nil
+}
+
+func decodeTickerDailyHistoricalData(body io.ReadCloser) (*dtos.Data, error) {
 	var rateLimitResponse dtos.RateLimitResponse
-    if err := json.NewDecoder(resp.Body).Decode(&rateLimitResponse); err == nil {
+    if err := json.NewDecoder(body).Decode(&rateLimitResponse); err == nil {
         if rateLimitResponse.Information != "" {
             return nil, errors.New("API rate limit reached: " + rateLimitResponse.Information)
         }
     }
 
     var apiResponse dtos.APIResponse
-	err = json.NewDecoder(resp.Body).Decode(&apiResponse)
+	err := json.NewDecoder(body).Decode(&apiResponse)
 	if err != nil {
 		log.Error("error decoding data from Alpha Vantage: " + err.Error())
+		return nil, errors.New("error decoding data from Alpha Vantage: " + err.Error())
 	}
+
 	var timeSeries []dtos.TimeSeries
 	for date, data := range apiResponse.TimeSeriesDaily {
 		open, _ := strconv.ParseFloat(data.Open, 64)
@@ -93,29 +110,25 @@ func (av *AlphavantageAPI) GetTickerDailyHistoricalData(ticker string) ([]byte, 
 			Volume: volume,
 		})
 	}
+	
+	orderTruncTimeSeries := orderAndTruncateTimeSeries(timeSeries)
 
-	orderedTimeSeries := utils.OrderTimeSeriesByDateDesc(timeSeries)
-
-	var truncTimeSeries []dtos.TimeSeries
-	if len(orderedTimeSeries) > maxTimeSeriesData {
-		truncTimeSeries = orderedTimeSeries[:maxTimeSeriesData]
-	} else {
-		truncTimeSeries = orderedTimeSeries
-	}
-
-	data := dtos.Data{
+	return &dtos.Data{
 		Symbol: apiResponse.MetaData.Symbol,
 		LastRefreshed: apiResponse.MetaData.LastRefreshed,
 		TimeZone: apiResponse.MetaData.TimeZone,
 		OutputSize: apiResponse.MetaData.OutputSize,
 		TimeSeriesType: "Daily",
-		TimeSeriesData: truncTimeSeries,
+		TimeSeriesData: orderTruncTimeSeries,
+	}, nil
+}
+
+func orderAndTruncateTimeSeries(timeSeries []dtos.TimeSeries) []dtos.TimeSeries {
+	orderedTimeSeries := utils.OrderTimeSeriesByDateDesc(timeSeries)
+
+	if len(orderedTimeSeries) > maxTimeSeriesData {
+		return orderedTimeSeries[:maxTimeSeriesData]
+	} else {
+		return orderedTimeSeries
 	}
-
-    jsonData, err := json.Marshal(data)
-    if err != nil {
-        return nil, errors.New("error marshalling data: " + err.Error())
-    }
-
-    return jsonData, nil
 }

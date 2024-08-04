@@ -44,8 +44,6 @@ func streamStockMarketData() error {
 		}
 		jsonMsg, _ := json.Marshal(msg)
 
-		log.Info("Message: ", msg)
-
 		err = kafkaProducer.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 			Value:          jsonMsg,
@@ -54,6 +52,8 @@ func streamStockMarketData() error {
 			log.Error("Failed to produce message: ", err)
 			break
 		}
+
+		log.Info("Message on topic ", topic, ": ", msg)
 
 		time.Sleep(10 * time.Second)
 	}
@@ -64,12 +64,16 @@ func streamStockMarketData() error {
 
 func initFinnhubWebSocket() *websocket.Conn {
 	finnhub_token := appCfg.GetEnvVar("FINNHUB_TOKEN")
+	if finnhub_token == "" {
+		log.Fatalf("FINNHUB_TOKEN not set")
+	}
+
 	urlStr := fmt.Sprintf("wss://ws.finnhub.io?token=%s", finnhub_token)
 	
 	ws, _, err := websocket.DefaultDialer.Dial(urlStr, nil)
 
 	if err != nil {
-		panic(errors.New("Failed to connect to Finnhub WebSocket: " + err.Error()))
+		log.Fatalf("Failed to connect to Finnhub WebSocket: %v", err)
 	}
 
 	symbols := []string{"BINANCE:BTCUSDT"}
@@ -84,8 +88,8 @@ func initFinnhubWebSocket() *websocket.Conn {
 }
 
 func FlushAndCloseKafkaProducer() {
-	log.Info("Flushing and closing Kafka producer")
-
+	log.Info("Flushing and closing Kafka producer...")
 	kafkaProducer.Flush(11 * 1000)
 	kafkaProducer.Close()
+	log.Info("Kafka producer flushed and closed")
 }
