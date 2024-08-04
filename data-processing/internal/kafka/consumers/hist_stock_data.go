@@ -50,17 +50,20 @@ func (c *Consumer) InitHistoricalStockDataConsumer(ctx context.Context, mongoCli
 			}
 
 			log.Info("Message reveived on topic ", msg.TopicPartition, ": ", apiResponse.Symbol)
+			updateCedearTimeSeriesData(apiResponse, mongoCli)
 		}
 	}
 }
 
-func UpdateCedearTimeSeriesData(data dtos.Data, mongoCli *mdb.MongoRepository) {
+func updateCedearTimeSeriesData(data dtos.Data, mongoCli *mdb.MongoRepository) {
 	var cedear dtos.Cedear = dtos.Cedear{
 		Ticker: data.Symbol,
+		TimeSeriesDayli: data,
 	}
 
 	err := mongoCli.UpdateCedearTimeSeriesData(cedear)
 	if err != nil {
 		log.Error("Failed to update cedear ", cedear.Ticker, " time series data: ", err)
 	}
+	log.Info("Cedear ", cedear.Ticker, " time series data updated")
 }

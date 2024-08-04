@@ -18,12 +18,25 @@ type AlphavantageAPI struct {
 	URI string
 	APIKey string
 	RequestPerDay int
+	DefaultSymbol string
 }
 
-func (av *AlphavantageAPI) ConfigAlphavantageAPI() error {
+const maxTimeSeriesData = 500
+var testing = false
+
+func (av *AlphavantageAPI) ConfigAlphavantageAPI(test bool) error {
+	if test {
+		testing = true
+		av.URI = "https://www.alphavantage.co/query"
+		av.APIKey = "demo"
+		av.RequestPerDay = 1000
+		av.DefaultSymbol = "IBM"
+		return nil
+	}
+
 	av.URI = appCfg.GetEnvVar("ALPHAVANTAGE_URI")
 	av.APIKey = appCfg.GetEnvVar("ALPHAVANTAGE_API_KEY")
-	av.RequestPerDay = 20
+	av.RequestPerDay = 25
 
     if av.URI == "" || av.APIKey == "" {
         return errors.New("ALPHAVANTAGE_URI or ALPHAVANTAGE_API_KEY not set")
@@ -33,11 +46,16 @@ func (av *AlphavantageAPI) ConfigAlphavantageAPI() error {
 }
 
 func (av *AlphavantageAPI) GetTickerDailyHistoricalData(ticker string) ([]byte, error) {
-    queryParams := fmt.Sprintf("?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s", ticker, av.APIKey)
-    url := av.URI + queryParams
-    fmt.Println("URL NOT USED: ", url)
+	var url string
+	if testing {
+		fmt.Println("URL NOT USED: ", url)
+    	url = fmt.Sprintf("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s", av.DefaultSymbol, av.APIKey)
+	} else {
+		queryParams := fmt.Sprintf("?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s", ticker, av.APIKey)
+    	url = av.URI + queryParams
+	}
 
-    resp, err := http.Get("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=IBM&outputsize=full&apikey=demo")
+	resp, err := http.Get(url)
     if err != nil {
         return nil, errors.New("error getting data from Alpha Vantage: " + err.Error())
     }
@@ -45,6 +63,13 @@ func (av *AlphavantageAPI) GetTickerDailyHistoricalData(ticker string) ([]byte, 
 
     if resp.StatusCode != http.StatusOK {
         return nil, errors.New("error getting data from Alpha Vantage, unexpected status code: " + resp.Status)
+    }
+
+	var rateLimitResponse dtos.RateLimitResponse
+    if err := json.NewDecoder(resp.Body).Decode(&rateLimitResponse); err == nil {
+        if rateLimitResponse.Information != "" {
+            return nil, errors.New("API rate limit reached: " + rateLimitResponse.Information)
+        }
     }
 
     var apiResponse dtos.APIResponse
@@ -69,7 +94,14 @@ func (av *AlphavantageAPI) GetTickerDailyHistoricalData(ticker string) ([]byte, 
 		})
 	}
 
-    orderedTimeSeries := utils.OrderTimeSeriesByDateDesc(timeSeries)
+	orderedTimeSeries := utils.OrderTimeSeriesByDateDesc(timeSeries)
+
+	var truncTimeSeries []dtos.TimeSeries
+	if len(orderedTimeSeries) > maxTimeSeriesData {
+		truncTimeSeries = orderedTimeSeries[:maxTimeSeriesData]
+	} else {
+		truncTimeSeries = orderedTimeSeries
+	}
 
 	data := dtos.Data{
 		Symbol: apiResponse.MetaData.Symbol,
@@ -77,7 +109,7 @@ func (av *AlphavantageAPI) GetTickerDailyHistoricalData(ticker string) ([]byte, 
 		TimeZone: apiResponse.MetaData.TimeZone,
 		OutputSize: apiResponse.MetaData.OutputSize,
 		TimeSeriesType: "Daily",
-		TimeSeriesData: orderedTimeSeries,
+		TimeSeriesData: truncTimeSeries,
 	}
 
     jsonData, err := json.Marshal(data)

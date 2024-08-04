@@ -15,6 +15,7 @@ func main() {
 	log := logrus.New()
 	log.SetFormatter(&logrus.TextFormatter{
 		DisableColors: false,
+		DisableTimestamp: false,
 		FullTimestamp: true,
 		TimestampFormat: time.RFC3339,
 	})
@@ -31,7 +32,8 @@ func main() {
 	}
 
 	alphavantageApi := apis.AlphavantageAPI{}
-	err = alphavantageApi.ConfigAlphavantageAPI()
+	test := false
+	err = alphavantageApi.ConfigAlphavantageAPI(test)
 	if err != nil {
 		log.Fatal("Error configuring Alphavantage API: ", err)
 	}

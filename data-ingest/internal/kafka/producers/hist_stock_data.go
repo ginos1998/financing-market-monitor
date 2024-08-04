@@ -1,8 +1,6 @@
 package producers
 
 import (
-	"time"
-
 	appCfg 	"github.com/ginos1998/financing-market-monitor/data-ingest/config"
 	mdb 	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/db/mongod"
 	dtos	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/models/dtos"
@@ -14,9 +12,9 @@ import (
 )
 
 func InitHistStockDataProducer(producer *kafka.Producer, alphaAlphavantageAPI *apis.AlphavantageAPI, mongoClient *mdb.MongoRepository) {
-	log.WithTime(time.Now()).Info("Cron <updateHistoricalStockData> created. Schedule: every 30s")
+	log.Info("Cron <updateHistoricalStockData> created. Schedule: every 5 minutes")
 	c := cron.New()
-	c.AddFunc("@every 15s", // every 1 minutes
+	c.AddFunc("@every 5m", // every 5 minutes
 		func() {
 			updateHistoricalStockData(producer, alphaAlphavantageAPI, mongoClient)
 		})
@@ -41,25 +39,25 @@ func updateHistoricalStockData(producer *kafka.Producer, alphavantageAPI *apis.A
 		return
 	}
 
-	cedearsToUpdate := cedears[:1] // alphaAlphavantageAPI.RequestPerDay
+	cedearsToUpdate := cedears[:alphavantageAPI.RequestPerDay]
 
 	log.Info("Updating historical stock data...")
 	log.Info("Cedears to update: ", len(cedearsToUpdate))
 
 	var cedearsNotUpdated []dtos.Cedear = make([]dtos.Cedear, 0)
 
-	for _, cedear := range cedearsToUpdate {
+	for idx, cedear := range cedearsToUpdate {
 		log.Info("Getting data of ", cedear.Ticker, " from Alphavantage API")
 		
 		res, err := alphavantageAPI.GetTickerDailyHistoricalData(cedear.Ticker)
 		if err != nil {
 			log.Error("Error getting data of ", cedear.Ticker, " from Alphavantage API: ", err)
-			cedearsNotUpdated = append(cedearsNotUpdated, cedear)
-			continue
+			cedearsNotUpdated = cedearsToUpdate[idx:]
+			break
 		}
 		// TODO historical WEEKLY data
 		
-		log.Info("Sending data of ", cedear.Ticker, " to Kafka. bytes: ", len(res))
+		log.Info("Sending data of ", cedear.Ticker, " to Kafka...")
 		error := producer.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 			Value:          res,
@@ -69,8 +67,8 @@ func updateHistoricalStockData(producer *kafka.Producer, alphavantageAPI *apis.A
 			log.Error("Error sending data of ", cedear.Ticker, " to Kafka: ", error)
 			cedearsNotUpdated = append(cedearsNotUpdated, cedear)
 		}
-		
-		time.Sleep(5 * time.Second)
+		log.Info("Data of ", cedear.Ticker, " sent to Kafka successfully")
+
 	}
 
 	log.Info("The process has updated ", len(cedearsToUpdate) - len(cedearsNotUpdated), " cedears")
@@ -79,6 +77,6 @@ func updateHistoricalStockData(producer *kafka.Producer, alphavantageAPI *apis.A
 		for _, cedear := range cedearsNotUpdated {
 			cedearsNotUpdatedTickers = append(cedearsNotUpdatedTickers, cedear.Ticker)
 		}
-		log.Info("The following cedears could not be updated: ", cedearsNotUpdatedTickers)
+		log.Warn("The following cedears could not be updated: ", cedearsNotUpdatedTickers)
 	}
 }

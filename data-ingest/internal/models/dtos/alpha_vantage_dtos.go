@@ -41,3 +41,7 @@ type Data struct {
 	TimeSeriesType  string      `bson:"timeseriestype"`
 	TimeSeriesData  []TimeSeries `bson:"timeseriesdata"`
 }
+
+type RateLimitResponse struct {
+    Information string `json:"Information"`
+}
