@@ -1,6 +1,8 @@
 package consumers
 
 import (
+	"errors"
+
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/ginos1998/financing-market-monitor/data-processing/config"
 	
@@ -14,6 +16,9 @@ type Consumer struct {
 func CrearteKafkaConsumer() (*Consumer, error) {
 	kafka_server := config.GetEnvVar("KAFKA_SERVER")
 	kafka_group_id := config.GetEnvVar("KAFKA_GROUP_ID")
+	if kafka_server == "" || kafka_group_id == "" {
+		return nil, errors.New("KAFKA_SERVER or KAFKA_GROUP_ID environment variable not set")
+	}
 
 	config := &kafka.ConfigMap{
 		"bootstrap.servers": kafka_server,
