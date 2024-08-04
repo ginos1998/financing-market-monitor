@@ -12,9 +12,9 @@ import (
 )
 
 func InitHistStockDataProducer(producer *kafka.Producer, alphaAlphavantageAPI *apis.AlphavantageAPI, mongoClient *mdb.MongoRepository) {
-	log.Info("Cron <updateHistoricalStockData> created. Schedule: every 5 minutes")
+	log.Info("Cron <updateHistoricalStockData> created. Schedule: every day at 7:00 AM")
 	c := cron.New()
-	c.AddFunc("@every 5m", // every 5 minutes
+	c.AddFunc("0 7 * * *", // every day at 7:00 AM
 		func() {
 			updateHistoricalStockData(producer, alphaAlphavantageAPI, mongoClient)
 		})
