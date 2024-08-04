@@ -9,7 +9,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/ginos1998/financing-market-monitor/internal/models/dtos"
+	"github.com/ginos1998/financing-market-monitor/data-processing/internal/models/dtos"
 )
 
 type ByDateDesc []dtos.TimeSeries
@@ -23,11 +23,15 @@ func (a ByDateDesc) Less(i, j int) bool {
 }
 
 const alphavantage_api_key = "XS1B4GCIFGSPQBNF"
-const alphavantage_url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s"
+const alphavantage_url = "https://www.alphavantage.co/query?function=%s&apikey=%s"
+const TIME_SERIES_DAILY = "TIME_SERIES_DAILY"
+const TIME_SERIES_WEEKLY = "TIME_SERIES_WEEKLY"
 
 func GetTickerDailyHistoricalData(ticker string) (dtos.Data, error) {
-    url := fmt.Sprintf(alphavantage_url, ticker, alphavantage_api_key)
-    resp, err := http.Get(url)
+    dayliParams := fmt.Sprintf("&symbol=%s&outputsize=full", ticker)
+    apiUrl := fmt.Sprintf(alphavantage_url, TIME_SERIES_DAILY, alphavantage_api_key)
+    dayliUrl := apiUrl + dayliParams
+    resp, err := http.Get(dayliUrl)
     if err != nil {
         return dtos.Data{}, errors.New("error getting data from Alpha Vantage: " + err.Error())
     }

@@ -1,14 +1,10 @@
-package models
-
-import (
-	"github.com/ginos1998/financing-market-monitor/internal/models/dtos"
-)
+package dtos
 
 type Cedear struct {
 	Denom string `bson:"denom"`
 	Ticker string `bson:"ticker"`
 	Ratio string `bson:"ratio"`
-	TimeSeriesDayli dtos.Data `bson:"time_series_dayli"`
+	TimeSeriesDayli Data `bson:"time_series_dayli"`
 }
 
 func NewCedear(record []string) Cedear {

@@ -6,9 +6,9 @@ import (
 	"errors"
 	"encoding/csv"
 
-	"github.com/ginos1998/financing-market-monitor/internal/models"
-	"github.com/ginos1998/financing-market-monitor/internal/repositories/mongod"
-	"github.com/ginos1998/financing-market-monitor/internal/import_data/apis"
+	"github.com/ginos1998/financing-market-monitor/data-processing/internal/models/dtos"
+	"github.com/ginos1998/financing-market-monitor/data-processing/internal/repositories/mongod"
+	"github.com/ginos1998/financing-market-monitor/data-processing/internal/import_data/apis"
 	
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -46,13 +46,13 @@ func ImportCedears(mongoClient *mongo.Client) {
 		panic(err)
 	}
 
-	var cedears []models.Cedear
+	var cedears []dtos.Cedear
 
 	for idx, record := range records {
 		if idx == 0 {
 			continue
 		}
-		cedear := models.NewCedear(record)
+		cedear := dtos.NewCedear(record)
 		cedears = append(cedears, cedear)
 	}
 

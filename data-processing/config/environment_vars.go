@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+	log "github.com/sirupsen/logrus"
 )
 
 const varsFile = ".env.processing"

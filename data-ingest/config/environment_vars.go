@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 const varsFile = ".env.ingest"
@@ -26,7 +26,7 @@ func LoadEnvVars() error {
         }
 	}
 
-	logrus.Info("Environment variables loaded successfully")
+	log.Info("Environment variables loaded successfully")
 	
 	return nil
 }

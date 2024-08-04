@@ -4,7 +4,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/ginos1998/financing-market-monitor/internal/models/dtos"
+	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/models/dtos"
 )
 
 type ByDateDesc []dtos.TimeSeries

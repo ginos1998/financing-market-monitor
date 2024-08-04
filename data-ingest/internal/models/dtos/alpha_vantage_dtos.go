@@ -34,6 +34,7 @@ type TimeSeries struct {
 }
 
 type Data struct {
+    Symbol         string       `bson:"symbol"`
 	LastRefreshed   string      `bson:"lastrefreshed"`
 	TimeZone        string      `bson:"timezone"`
 	OutputSize      string      `bson:"outputsize"`

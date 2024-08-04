@@ -10,20 +10,25 @@ import (
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/gorilla/websocket"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
-var log = logrus.New()
 var kafkaProducer *kafka.Producer
 
 func InitStreamStockMarketDataProducer(producer *kafka.Producer) {
 	kafkaProducer = producer
 
-	streamStockMarketData()
+	err := streamStockMarketData()
+	if err != nil {
+		log.Fatal("Error streaming stock market data: ", err)
+	}
 }
 
-func streamStockMarketData() {
+func streamStockMarketData() error {
 	topic := appCfg.GetEnvVar("KAFKA_TOPIC_STREAM_STOCK_MARKET_DATA")
+	if topic == "" {
+		return errors.New("KAFKA_TOPIC_STREAM_STOCK_MARKET_DATA not set")
+	}
 
 	ws := initFinnhubWebSocket()
 	defer ws.Close()
@@ -54,6 +59,7 @@ func streamStockMarketData() {
 	}
 
 	FlushAndCloseKafkaProducer()
+	return nil
 }
 
 func initFinnhubWebSocket() *websocket.Conn {

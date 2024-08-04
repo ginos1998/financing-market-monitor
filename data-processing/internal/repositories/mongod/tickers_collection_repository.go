@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ginos1998/financing-market-monitor/internal/models"
+	"github.com/ginos1998/financing-market-monitor/data-processing/internal/models/dtos"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -19,7 +19,7 @@ func getCollection(client *mongo.Client) (*mongo.Collection, error) {
 	return collection, nil
 }
 
-func InsertCedear(client *mongo.Client, cedear models.Cedear) error {
+func InsertCedear(client *mongo.Client, cedear dtos.Cedear) error {
 	collection, err := getCollection(client)
 	if err != nil {
 		return err
@@ -36,26 +36,26 @@ func InsertCedear(client *mongo.Client, cedear models.Cedear) error {
 	return nil
 }
 
-func GetCedearByTicker(client *mongo.Client, ticker string) (models.Cedear, error) {
+func GetCedearByTicker(client *mongo.Client, ticker string) (dtos.Cedear, error) {
 	collection, err := getCollection(client)
 	if err != nil {
-		return models.Cedear{}, err
+		return dtos.Cedear{}, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	
 	filter := bson.D{{Key: "ticker", Value: ticker}}
-	var cedear models.Cedear
+	var cedear dtos.Cedear
 	err = collection.FindOne(ctx, filter).Decode(&cedear)
 	if err != nil {
-		return models.Cedear{}, errors.New("error getting CEDEAR: " + err.Error())
+		return dtos.Cedear{}, errors.New("error getting CEDEAR: " + err.Error())
 	}
 
 	return cedear, nil
 }
 
-func GetAllCedears(client *mongo.Client) ([]models.Cedear, error) {
+func GetAllCedears(client *mongo.Client) ([]dtos.Cedear, error) {
 	collection, err := getCollection(client)
 	if err != nil {
 		return nil, err
@@ -70,9 +70,9 @@ func GetAllCedears(client *mongo.Client) ([]models.Cedear, error) {
 	}
 	defer cursor.Close(ctx)
 
-	var cedears []models.Cedear
+	var cedears []dtos.Cedear
 	for cursor.Next(ctx) {
-		var cedear models.Cedear
+		var cedear dtos.Cedear
 		err := cursor.Decode(&cedear)
 		if err != nil {
 			return nil, errors.New("error decoding CEDEAR: " + err.Error())
@@ -83,7 +83,7 @@ func GetAllCedears(client *mongo.Client) ([]models.Cedear, error) {
 	return cedears, nil
 }
 
-func UpdateCedearTimeSeriesData(client *mongo.Client, cedear models.Cedear) error {
+func UpdateCedearTimeSeriesData(client *mongo.Client, cedear dtos.Cedear) error {
 	collection, err := getCollection(client)
 	if err != nil {
 		return err

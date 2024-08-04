@@ -13,6 +13,7 @@ func CreateKafkaProducer() (*kafka.Producer, error) {
 
 	config := &kafka.ConfigMap{
 		"bootstrap.servers": server,
+		"message.max.bytes": 3000000,
 	}
 	producer, err := kafka.NewProducer(config)
 	if err != nil {

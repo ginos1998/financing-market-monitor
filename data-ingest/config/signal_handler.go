@@ -5,10 +5,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
-
-var log = logrus.New()
 
 func InitSignalHandler() chan bool {
 	sigChan := make(chan os.Signal, 1)
