@@ -30,7 +30,8 @@ type TimeSeries struct {
 	High   float64 `bson:"high"`
 	Low    float64 `bson:"low"`
 	Close  float64 `bson:"close"`
-	Volume int     `bson:"volume"`
+    AdjClose float64 `bson:"adjclose"`
+	Volume int64     `bson:"volume"`
 }
 
 type Data struct {

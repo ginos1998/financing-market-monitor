@@ -22,7 +22,7 @@ type AlphavantageAPI struct {
 	DefaultSymbol string
 }
 
-const maxTimeSeriesData = 500
+const maxTimeSeriesData = 1500
 var testing = false
 
 func (av *AlphavantageAPI) ConfigAlphavantageAPI(test bool) error {
@@ -100,7 +100,7 @@ func decodeTickerDailyHistoricalData(body io.ReadCloser) (*dtos.Data, error) {
 		high, _ := strconv.ParseFloat(data.High, 64)
 		low, _ := strconv.ParseFloat(data.Low, 64)
 		close, _ := strconv.ParseFloat(data.Close, 64)
-		volume, _ := strconv.Atoi(data.Volume)
+		volume, _ := strconv.ParseInt(data.Volume, 10, 64)
 		timeSeries = append(timeSeries, dtos.TimeSeries{
 			Date:   date,
 			Open:   open,

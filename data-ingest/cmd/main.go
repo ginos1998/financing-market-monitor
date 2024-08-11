@@ -42,6 +42,8 @@ func main() {
 	if err != nil {
 		log.Fatal("Error creating Kafka producer: ", err)
 	}
+
+	_, _ = apis.GetDayliHistoricalStockData("ABNB")
 	
 	go kafkaProducers.InitStreamStockMarketDataProducer(producer)
 	go kafkaProducers.InitHistStockDataProducer(producer, &alphavantageApi, mongocli)
