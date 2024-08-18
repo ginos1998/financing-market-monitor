@@ -1,18 +1,18 @@
-package mongod
+package cedears
 
 import (
-	"time"
 	"context"
+	"time"
 
+	"github.com/ginos1998/financing-market-monitor/data-processing/config/mongod"
 	dtos "github.com/ginos1998/financing-market-monitor/data-processing/internal/models/dtos"
-
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-const tickersCollectionName = "tickers"
+const cedearsCollectionName = "cedears"
 
-func (c *MongoRepository) UpdateCedearTimeSeriesData(cedear dtos.Cedear) error {
-	tickersCollection := c.Collections[tickersCollectionName]
+func UpdateCedearTimeSeriesData(mongoRepository mongod.MongoRepository, cedear dtos.Cedear) error {
+	tickersCollection := mongoRepository.Collections[cedearsCollectionName]
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
