@@ -8,6 +8,7 @@ import (
 	"time"
 
 	srv "github.com/ginos1998/financing-market-monitor/data-processing/config/server"
+	indicatorsCron "github.com/ginos1998/financing-market-monitor/data-processing/internal/crons/indicators"
 	kafkaConsumer "github.com/ginos1998/financing-market-monitor/data-processing/internal/kafka/consumers"
 )
 
@@ -20,13 +21,18 @@ func main() {
 	server := srv.NewServer()
 	server.Logger.Info("Server configured")
 
+	err := indicatorsCron.CalculateMovingAverages(server)
+	if err != nil {
+		server.Logger.Fatalf("Error starting cron: %v", err)
+	}
+
 	// consumes stock market data
 	consumer, err := kafkaConsumer.CrearteKafkaConsumer(*server)
 	if err != nil {
 		server.Logger.Fatalf("Error creating kafka consumer: %v", err)
 	}
 	go func() {
-		if err := consumer.InitStockMarketDataConsumer(ctx); err != nil {
+		if err := consumer.InitStockMarketDataConsumer(ctx, server.RedisClient); err != nil {
 			server.Logger.Fatalf("Error running consumer: %v", err)
 		}
 	}()
@@ -42,6 +48,7 @@ func main() {
 		}
 	}()
 
+	server.Logger.Info("Server started")
 	<-sigs
 	server.Logger.Info("Shutting down...")
 

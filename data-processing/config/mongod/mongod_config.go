@@ -19,6 +19,7 @@ type MongoRepository struct {
 var dbCollections = []string{
 	"cedears",
 	"acciones",
+	"cryptos",
 }
 
 func CreateMongoClient(envVars map[string]string) (*MongoRepository, error) {

@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 
+	redisDb "github.com/ginos1998/financing-market-monitor/data-processing/config/redis"
 	"github.com/ginos1998/financing-market-monitor/data-processing/internal/models/dtos"
+	redisServices "github.com/ginos1998/financing-market-monitor/data-processing/internal/services/redis"
 )
 
-func (c *Consumer) InitStockMarketDataConsumer(ctx context.Context) error {
+func (c *Consumer) InitStockMarketDataConsumer(ctx context.Context, redisClient redisDb.RedisClient) error {
 	topic := topicsMap["KAFKA_TOPIC_STREAM_STOCK_MARKET_DATA"]
 	err := c.consumer.SubscribeTopics([]string{topic}, nil)
 	if err != nil {
@@ -42,6 +44,10 @@ func (c *Consumer) InitStockMarketDataConsumer(ctx context.Context) error {
 			if len(tradesData.Trades) == 0 {
 				logger.Warn("No trades data found")
 				continue
+			}
+			err = redisServices.CreateOrUpdateSymbolPrices(&redisClient, tradesData.Trades[0].Symbol, tradesData.Trades[0].LastPrice)
+			if err != nil {
+				logger.Error("redisService: Failed to update symbol prices: ", err)
 			}
 
 			logger.Info(fmt.Sprintf("Message on %s: Symbol %s LastPrice %v\n", msg.TopicPartition, tradesData.Trades[0].Symbol, tradesData.Trades[0].LastPrice))

@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"github.com/ginos1998/financing-market-monitor/data-processing/config/mongod"
+	"github.com/ginos1998/financing-market-monitor/data-processing/config/redis"
 	"github.com/sirupsen/logrus"
 )
 
@@ -10,6 +11,7 @@ type Server struct {
 	EnvVars         map[string]string
 	Logger          *logrus.Logger
 	MongoRepository mongod.MongoRepository
+	RedisClient     redis.RedisClient
 }
 
 func NewServer() *Server {
@@ -31,10 +33,16 @@ func NewServer() *Server {
 		logger.Fatal("Error creating MongoDB client: ", err)
 	}
 
+	redisClient, err := redis.NewRedisClient(envVars)
+	if err != nil {
+		logger.Fatal("Error creating Redis client: ", err)
+	}
+
 	return &Server{
 		EnvVars:         envVars,
 		Logger:          logger,
 		MongoRepository: *mongoRepository,
+		RedisClient:     *redisClient,
 	}
 }
 
