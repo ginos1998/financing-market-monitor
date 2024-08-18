@@ -27,7 +27,7 @@ func ConfigAlphavantageAPI(envVars map[string]string, test bool) (*AlphavantageA
 	av := AlphavantageAPI{}
 	if test {
 		testing = true
-		av.URI = "https://www.alphavantage.co/query"
+		av.URI = envVars["ALPHAVANTAGE_URI"]
 		av.APIKey = "demo"
 		av.RequestPerDay = 10000
 		av.DefaultSymbol = "IBM"
@@ -46,14 +46,13 @@ func ConfigAlphavantageAPI(envVars map[string]string, test bool) (*AlphavantageA
 }
 
 func (av *AlphavantageAPI) GetTickerDailyHistoricalData(ticker string) ([]byte, error) {
-	var url string
+	var queryParams string
 	if testing {
-		fmt.Println("URL NOT USED: ", url)
-		url = fmt.Sprintf("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s", av.DefaultSymbol, av.APIKey)
+		queryParams = fmt.Sprintf("?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s", av.DefaultSymbol, av.APIKey)
 	} else {
-		queryParams := fmt.Sprintf("?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s", ticker, av.APIKey)
-		url = av.URI + queryParams
+		queryParams = fmt.Sprintf("?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s", ticker, av.APIKey)
 	}
+	url := av.URI + queryParams
 
 	resp, err := http.Get(url)
 	if err != nil {

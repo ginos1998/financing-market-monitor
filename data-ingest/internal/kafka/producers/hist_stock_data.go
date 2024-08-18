@@ -16,9 +16,9 @@ func (p *KafkaProducer) UpdateHistoricalStockData(useYahooAPI bool, server serve
 		server.Logger.Fatal("Error configuring Alphavantage API: ", err)
 	}
 
-	topic := server.EnvVars["KAFKA_TOPIC_HIST_DAYLI_STOCK_DATA"]
+	topic := server.EnvVars["KAFKA_TOPIC_HIST_DAILY_STOCK_DATA"]
 	if topic == "" {
-		logger.Error("envvar KAFKA_TOPIC_HIST_DAYLI_STOCK_DATA not set")
+		logger.Error("envvar KAFKA_TOPIC_HIST_DAILY_STOCK_DATA not set")
 		return
 	}
 
@@ -54,7 +54,7 @@ func (p *KafkaProducer) UpdateHistoricalStockData(useYahooAPI bool, server serve
 	for idx, cedear := range cedearsToUpdate {
 
 		if useYahooAPI {
-			res, err = apis.GetDailyHistoricalStockData(cedear.Ticker)
+			res, err = apis.GetDailyHistoricalStockData(cedear.Ticker, server.EnvVars)
 			if err != nil {
 				logger.Error("Error getting data of ", cedear.Ticker, " from Yahoo API: ", err)
 				cedearsNotUpdated = append(cedearsNotUpdated, cedear)

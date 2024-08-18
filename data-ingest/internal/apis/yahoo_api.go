@@ -14,11 +14,16 @@ import (
 
 const periodFrom = 946684800 // 01/01/2000
 const periodTo = 1723324741  // 01/01/2025
-const yahooFinanceURL = "https://query1.finance.yahoo.com/v7/finance/download/%s?period1=%d&period2=%d&interval=1d&events=history&includeAdjustedClose=true"
+const yahooFinanceURL = "/download/%s?period1=%d&period2=%d&interval=1d&events=history&includeAdjustedClose=true"
 
-func GetDailyHistoricalStockData(stockSymbol string) ([]byte, error) {
+func GetDailyHistoricalStockData(stockSymbol string, envvars map[string]string) ([]byte, error) {
+	yahooURL := envvars["YAHOO_FINANCE_URL"]
+	if yahooURL == "" {
+		return nil, errors.New("variable YAHOO_FINANCE_URL not set")
+	}
+	url := fmt.Sprintf(yahooURL+yahooFinanceURL, stockSymbol, periodFrom, periodTo)
+
 	logger.Info("Getting historical stock data from Yahoo Finance API for ", stockSymbol)
-	url := fmt.Sprintf(yahooFinanceURL, stockSymbol, periodFrom, periodTo)
 
 	response, err := http.Get(url)
 	if err != nil {
