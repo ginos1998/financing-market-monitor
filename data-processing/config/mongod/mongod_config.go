@@ -16,7 +16,7 @@ type MongoRepository struct {
 	Collections map[string]*mongo.Collection
 }
 
-var db_collections = []string{
+var dbCollections = []string{
 	"cedears",
 	"acciones",
 }
@@ -45,7 +45,7 @@ func CreateMongoClient(envVars map[string]string) (*MongoRepository, error) {
 	}
 
 	var collections = make(map[string]*mongo.Collection)
-	for _, collection := range db_collections {
+	for _, collection := range dbCollections {
 		collections[collection] = client.Database(database).Collection(collection)
 	}
 

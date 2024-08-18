@@ -11,6 +11,7 @@ func main() {
 	doneChan := appCfg.InitSignalHandler()
 
 	server := srv.NewServer()
+	server.Logger.Info("Server configured")
 
 	producer, err := kafkaProducers.CreateKafkaProducer(*server)
 	if err != nil {

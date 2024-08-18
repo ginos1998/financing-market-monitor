@@ -12,13 +12,13 @@ import (
 )
 
 func main() {
-	server := srv.NewServer()
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	server := srv.NewServer()
+	server.Logger.Info("Server configured")
 
 	// consumes stock market data
 	consumer, err := kafkaConsumer.CrearteKafkaConsumer(*server)

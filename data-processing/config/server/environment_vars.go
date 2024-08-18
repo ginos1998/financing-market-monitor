@@ -7,7 +7,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const varsFile = ".env.ingest"
+const varsFile = ".env.processing"
 
 func LoadEnvVars() (map[string]string, error) {
 	err := godotenv.Load(varsFile)

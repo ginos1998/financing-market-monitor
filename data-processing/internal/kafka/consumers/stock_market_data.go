@@ -9,7 +9,7 @@ import (
 )
 
 func (c *Consumer) InitStockMarketDataConsumer(ctx context.Context) error {
-	topic := topicsMap["KAFKA_TOPIC_STOCK_MARKET_DATA"]
+	topic := topicsMap["KAFKA_TOPIC_STREAM_STOCK_MARKET_DATA"]
 	err := c.consumer.SubscribeTopics([]string{topic}, nil)
 	if err != nil {
 		logger.Fatalf("Failed to subscribe to topic %s: %v", topic, err)
