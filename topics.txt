@@ -1,1 +1,2 @@
-docker compose exec kafka kafka-topics --create --topic coordinates --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1
+docker compose exec kafka kafka-topics --create --topic stream_stock_market_data --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1
+docker compose exec kafka kafka-topics --create --topic time_series_data --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1

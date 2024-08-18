@@ -11,9 +11,9 @@ import (
 )
 
 func (c *Consumer) InitHistoricalStockDataConsumer(ctx context.Context, mongoRepository mongod.MongoRepository) error {
-	topic := topicsMap["KAFKA_TOPIC_HIST_DAILY_STOCK_DATA"]
+	topic := topicsMap["KAFKA_TOPIC_TIME_SERIES_DATA"]
 	if topic == "" {
-		logger.Fatal("KAFKA_TOPIC_HIST_DAILY_STOCK_DATA not set")
+		logger.Fatal("KAFKA_TOPIC_TIME_SERIES_DATA not set")
 	}
 
 	err := c.consumer.SubscribeTopics([]string{topic}, nil)

@@ -50,7 +50,7 @@ func (c *Consumer) Close() {
 
 func loadKafkaTopics(envVars map[string]string) {
 	topicsMap = map[string]string{
-		"KAFKA_TOPIC_HIST_DAILY_STOCK_DATA":    envVars["KAFKA_TOPIC_HIST_DAILY_STOCK_DATA"],
+		"KAFKA_TOPIC_TIME_SERIES_DATA":         envVars["KAFKA_TOPIC_TIME_SERIES_DATA"],
 		"KAFKA_TOPIC_STREAM_STOCK_MARKET_DATA": envVars["KAFKA_TOPIC_STREAM_STOCK_MARKET_DATA"],
 	}
 }
