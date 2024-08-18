@@ -1,6 +1,8 @@
 module github.com/ginos1998/financing-market-monitor/data-processing
 
-go 1.20
+go 1.21
+
+toolchain go1.22.5
 
 require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.5.0 // indirect
