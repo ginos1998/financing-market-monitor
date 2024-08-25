@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/ginos1998/financing-market-monitor/data-processing/internal/db/mongod/tickers"
 
 	"github.com/ginos1998/financing-market-monitor/data-processing/config/mongod"
-	cedearsRepository "github.com/ginos1998/financing-market-monitor/data-processing/internal/db/mongod/cedears"
 	"github.com/ginos1998/financing-market-monitor/data-processing/internal/models/dtos"
 )
 
@@ -48,20 +48,32 @@ func (c *Consumer) InitHistoricalStockDataConsumer(ctx context.Context, mongoRep
 			}
 
 			logger.Info("Message received on topic ", msg.TopicPartition, ": ", apiResponse.Symbol)
-			updateCedearTimeSeriesData(apiResponse, mongoRepository)
+			updateTickerTimeSeriesData(apiResponse, mongoRepository)
 		}
 	}
 }
 
-func updateCedearTimeSeriesData(data dtos.Data, mongoRepository mongod.MongoRepository) {
-	var cedear = dtos.Cedear{
-		Ticker:          data.Symbol,
-		TimeSeriesDayli: data,
+func updateTickerTimeSeriesData(data dtos.Data, mongoRepository mongod.MongoRepository) {
+	var ticker = dtos.Ticker{
+		Symbol: data.Symbol,
 	}
 
-	err := cedearsRepository.UpdateCedearTimeSeriesData(mongoRepository, cedear)
-	if err != nil {
-		logger.Error("Failed to update cedear ", cedear.Ticker, " time series data: ", err)
+	if data.TimeSeriesType == "1d" {
+		ticker.TimeSeriesDaily = data
+		err := tickers.UpdateTickerTimeSeriesDaily(mongoRepository, ticker)
+		if err != nil {
+			logger.Error("Failed to update ticker ", ticker.Symbol, " daily time series data: ", err)
+		}
+	} else if data.TimeSeriesType == "1wk" {
+		ticker.TimeSeriesWeekly = data
+		err := tickers.UpdateTickerTimeSeriesWeekly(mongoRepository, ticker)
+		if err != nil {
+			logger.Error("Failed to update ticker ", ticker.Symbol, " weekly time series data: ", err)
+		}
+	} else {
+		logger.Error("Invalid time series type: ", data.TimeSeriesType)
+		return
 	}
-	logger.Info("Cedear ", cedear.Ticker, " time series data updated")
+
+	logger.Info("Ticker ", ticker.Symbol, " ", data.TimeSeriesType, " time series data updated successfully")
 }

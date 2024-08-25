@@ -78,6 +78,10 @@ func FindSymbolTimeSeriesData(stockSymbol string, period string, envvars map[str
 	var lastRefreshed = ""
 	if len(stockData) > 0 {
 		lastRefreshed = stockData[len(stockData)-1].Date
+	} else {
+		logger.Warn("No se encontraron datos para el símbolo ", stockSymbol)
+		return nil, errors.New("No se encontraron datos para el símbolo " + stockSymbol)
+
 	}
 
 	data := dtos.Data{

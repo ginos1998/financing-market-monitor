@@ -20,6 +20,7 @@ var dbCollections = []string{
 	"cedears",
 	"acciones",
 	"cryptos",
+	"tickers",
 }
 
 func CreateMongoClient(envVars map[string]string) (*MongoRepository, error) {

@@ -7,8 +7,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"time"
 
-	"github.com/ginos1998/financing-market-monitor/data-ingest/config/server"
-	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/models/dtos"
+	"github.com/ginos1998/financing-market-monitor/data-processing/config/mongod"
+	"github.com/ginos1998/financing-market-monitor/data-processing/config/server"
+	"github.com/ginos1998/financing-market-monitor/data-processing/internal/models/dtos"
 )
 
 const tickersCollectionName = "tickers"
@@ -37,15 +38,10 @@ func GetTickersWithoutTimeSeries(server server.Server) ([]dtos.Ticker, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	filter := bson.M{
-		"$and": []bson.M{
-			{"has_adr": true},
-		},
-		"$or": []bson.M{
-			{"time_series_daily.timeseriesdata": bson.M{"$eq": nil}},
-			{"time_series_weekly.timeseriesdata": bson.M{"$eq": nil}},
-		},
-	}
+	filter := bson.M{"$and": []bson.M{
+		{"time_series_daily.timeseriesdata": bson.M{"$eq": nil}},
+		{"has_adr": true},
+	}}
 
 	cursor, err := tickersCollection.Find(ctx, filter)
 	if err != nil {
@@ -64,4 +60,30 @@ func GetTickersWithoutTimeSeries(server server.Server) ([]dtos.Ticker, error) {
 	}
 
 	return tickers, nil
+}
+
+func UpdateTickerTimeSeriesDaily(mongoRepository mongod.MongoRepository, ticker dtos.Ticker) error {
+	tickersCollection := mongoRepository.Collections[tickersCollectionName]
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.D{{Key: "symbol", Value: ticker.Symbol}}
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "time_series_daily", Value: ticker.TimeSeriesDaily}}}}
+	tickersCollection.FindOneAndUpdate(ctx, filter, update)
+
+	return nil
+}
+
+func UpdateTickerTimeSeriesWeekly(mongoRepository mongod.MongoRepository, ticker dtos.Ticker) error {
+	tickersCollection := mongoRepository.Collections[tickersCollectionName]
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.D{{Key: "symbol", Value: ticker.Symbol}}
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "time_series_weekly", Value: ticker.TimeSeriesWeekly}}}}
+	tickersCollection.FindOneAndUpdate(ctx, filter, update)
+
+	return nil
 }

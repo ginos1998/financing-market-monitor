@@ -17,20 +17,19 @@ func (p *KafkaProducer) UpdateTickersTimeSeries(server server.Server) {
 		logger.Error("envvar KAFKA_TOPIC_TIME_SERIES_DATA not set")
 		return
 	}
-	tickers, err := tickersRepository.GetTickersWithoutTimeSeries(server)
+	apis.SetLogger(server.Logger)
+	tickersToUpdate, err := tickersRepository.GetTickersWithoutTimeSeries(server)
 	if err != nil {
 		logger.Error("Error getting tickers without time series: ", err)
 		return
 	}
-	logger.Info("tickers without time series: ", len(tickers))
+	logger.Info("tickers without time series: ", len(tickersToUpdate))
 
-	if len(tickers) == 0 {
+	if len(tickersToUpdate) == 0 {
 		logger.Info("No tickers without time series")
 		return
 	}
 
-	var tickersToUpdate []dtos.Ticker
-	tickersToUpdate = tickers
 	logger.Info("Updating time series data...")
 	logger.Info("Tickers to update: ", len(tickersToUpdate))
 
@@ -39,6 +38,12 @@ func (p *KafkaProducer) UpdateTickersTimeSeries(server server.Server) {
 
 	for _, ticker := range tickersToUpdate {
 		for _, period := range periods {
+			if period == "1d" && ticker.TimeSeriesDaily.TimeSeriesData != nil {
+				continue
+			}
+			if period == "1wk" && ticker.TimeSeriesWeekly.TimeSeriesData != nil {
+				continue
+			}
 			res, err = apis.FindSymbolTimeSeriesData(ticker.Symbol, period, server.EnvVars)
 			if err != nil {
 				logger.Error("Error getting ", period, " data of ", ticker.Symbol, " from Yahoo API: ", err)

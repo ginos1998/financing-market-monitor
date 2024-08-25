@@ -46,11 +46,11 @@ func main() {
 			server.Logger.Fatalf("Error running consumer: %v", err)
 		}
 	}()
-	go func() {
-		if err := hsdConsumer.ConsumesCryptoDailyTimeSeries(ctx, server.MongoRepository); err != nil {
-			server.Logger.Fatalf("Error running consumer: %v", err)
-		}
-	}()
+	//go func() {
+	//	if err := hsdConsumer.ConsumesCryptoDailyTimeSeries(ctx, server.MongoRepository); err != nil {
+	//		server.Logger.Fatalf("Error running consumer: %v", err)
+	//	}
+	//}()
 
 	server.Logger.Info("Server started")
 	<-sigs

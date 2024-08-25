@@ -52,6 +52,5 @@ func loadKafkaTopics(envVars map[string]string) {
 	topicsMap = map[string]string{
 		"KAFKA_TOPIC_TIME_SERIES_DATA":         envVars["KAFKA_TOPIC_TIME_SERIES_DATA"],
 		"KAFKA_TOPIC_STREAM_STOCK_MARKET_DATA": envVars["KAFKA_TOPIC_STREAM_STOCK_MARKET_DATA"],
-		"KAFKA_TOPIC_CRYPTO_TIME_SERIES_DATA":  envVars["KAFKA_TOPIC_CRYPTO_TIME_SERIES_DATA"],
 	}
 }
