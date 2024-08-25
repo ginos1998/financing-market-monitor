@@ -55,7 +55,8 @@ func main() {
 	server.Logger.Info("Server started")
 	<-sigs
 	server.Logger.Info("Shutting down...")
-
+	consumer.Close()
+	hsdConsumer.Close()
 	cancel()
 	time.Sleep(5 * time.Second)
 	server.Logger.Info("Consumer has shut down")
