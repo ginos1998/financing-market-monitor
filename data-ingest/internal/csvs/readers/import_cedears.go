@@ -3,6 +3,7 @@ package readers
 import (
 	"errors"
 	"github.com/ginos1998/financing-market-monitor/data-ingest/config/server"
+	tickersRepository "github.com/ginos1998/financing-market-monitor/data-ingest/internal/db/mongod/tickers"
 	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/models/dtos"
 )
 
@@ -29,7 +30,7 @@ func ImportCedearsFromCsv(server server.Server) error {
 	}
 	server.Logger.Info("CEDEARs data read successfully")
 
-	err = tickers.InsertTickersAll(server, tickers)
+	err = tickersRepository.InsertTickersAll(server, tickers)
 	if err != nil {
 		return errors.New("error inserting CEDEARs: " + err.Error())
 	}
