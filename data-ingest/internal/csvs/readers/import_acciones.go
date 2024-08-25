@@ -3,7 +3,6 @@ package readers
 import (
 	"errors"
 	"github.com/ginos1998/financing-market-monitor/data-ingest/config/server"
-	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/db/mongod/tickersRepository"
 	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/models/dtos"
 )
 
@@ -35,7 +34,7 @@ func ImportBYMATickersFromCsv(server server.Server) error {
 
 	server.Logger.Info("BYMA tickers data read successfully. Found ", len(tickers), " records")
 
-	err = tickersRepository.InsertTickersAll(server, tickers)
+	err = tickers.InsertTickersAll(server, tickers)
 	if err != nil {
 		return errors.New("error inserting BYMA tickers: " + err.Error())
 	}

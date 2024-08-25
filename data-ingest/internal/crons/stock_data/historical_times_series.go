@@ -10,17 +10,16 @@ import (
 )
 
 func InitHistStockDataProducer(producer *producers.KafkaProducer, server server.Server) {
-	server.Logger.Info("Cron <updateHistoricalStockData> created. Schedule: every day at 9:10 AM")
-	useYahooAPI := true
+	server.Logger.Info("Cron <UpdateTickersTimeSeries> created. Schedule: every day at 9:10 AM")
 	c := cron.New()
 	_, err := c.AddFunc("01 10 * * *", // every day at 9:10 AM
 		func() {
-			server.Logger.Info("Cron <updateHistoricalStockData> started at ", time.Now().Format(time.RFC3339))
-			producer.UpdateHistoricalStockData(useYahooAPI, server)
-			server.Logger.Info("Cron <updateHistoricalStockData> finished at ", time.Now().Format(time.RFC3339))
+			server.Logger.Info("Cron <UpdateTickersTimeSeries> started at ", time.Now().Format(time.RFC3339))
+			producer.UpdateTickersTimeSeries(server)
+			server.Logger.Info("Cron <UpdateTickersTimeSeries> finished at ", time.Now().Format(time.RFC3339))
 		})
 	if err != nil {
-		server.Logger.Error("Error creating cron <updateHistoricalStockData>: ", err)
+		server.Logger.Error("Error creating cron <UpdateTickersTimeSeries>: ", err)
 		return
 	}
 	c.Start()

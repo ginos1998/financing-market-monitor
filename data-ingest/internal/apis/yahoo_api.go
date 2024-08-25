@@ -14,14 +14,19 @@ import (
 
 const periodFrom = 946684800 // 01/01/2000
 const periodTo = 1723324741  // 01/01/2025
-const yahooFinanceURL = "/download/%s?period1=%d&period2=%d&interval=1d&events=history&includeAdjustedClose=true"
+const yahooFinanceURL = "/download/%s?period1=%d&period2=%d&interval=%s&events=history&includeAdjustedClose=true"
 
-func GetDailyHistoricalStockData(stockSymbol string, envvars map[string]string) ([]byte, error) {
+func FindSymbolTimeSeriesData(stockSymbol string, period string, envvars map[string]string) ([]byte, error) {
 	yahooURL := envvars["YAHOO_FINANCE_URL"]
 	if yahooURL == "" {
 		return nil, errors.New("variable YAHOO_FINANCE_URL not set")
 	}
-	url := fmt.Sprintf(yahooURL+yahooFinanceURL, stockSymbol, periodFrom, periodTo)
+	p := "1d"
+	if period != "" {
+		p = period
+	}
+
+	url := fmt.Sprintf(yahooURL+yahooFinanceURL, stockSymbol, periodFrom, periodTo, p)
 
 	logger.Info("Getting historical stock data from Yahoo Finance API for ", stockSymbol)
 
@@ -80,7 +85,7 @@ func GetDailyHistoricalStockData(stockSymbol string, envvars map[string]string) 
 		LastRefreshed:  lastRefreshed,
 		TimeZone:       "UTC",
 		OutputSize:     "Full",
-		TimeSeriesType: "Daily",
+		TimeSeriesType: p,
 		TimeSeriesData: stockData,
 	}
 
