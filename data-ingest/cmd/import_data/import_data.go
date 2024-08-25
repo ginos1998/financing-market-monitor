@@ -11,10 +11,10 @@ func main() {
 
 	err := readers.ImportCedearsFromCsv(*server)
 	if err != nil {
-		server.Logger.Error("Error importing cedears: ", err)
+		server.Logger.Error("Error importing CEDEARs: ", err)
 	}
 
-	err = readers.ImportAccionesFromCsv(*server)
+	err = readers.ImportBYMATickersFromCsv(*server)
 	if err != nil {
 		server.Logger.Error("Error importing acciones: ", err)
 	}

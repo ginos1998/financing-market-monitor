@@ -3,44 +3,43 @@ package readers
 import (
 	"errors"
 	"github.com/ginos1998/financing-market-monitor/data-ingest/config/server"
-	accionesRepository "github.com/ginos1998/financing-market-monitor/data-ingest/internal/db/mongod/acciones"
+	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/db/mongod/tickersRepository"
 	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/models/dtos"
 )
 
-const accionesFileName = "resources/empresas_tickers.csv"
+const bymaTickersFileName = "resources/empresas_tickers.csv"
 
-func ImportAccionesFromCsv(server server.Server) error {
-	server.Logger.Info("Importing acciones data from ", accionesFileName)
+func ImportBYMATickersFromCsv(server server.Server) error {
+	server.Logger.Info("Importing BYMA tickers data from ", bymaTickersFileName)
 	requiredHeaders := []string{"company", "ticker", "has_adr", "symbol"}
 
-	records, err := openCsvFile(accionesFileName)
+	records, err := openCsvFile(bymaTickersFileName)
 	if err != nil || len(records) == 0 {
 		panic(err)
 	}
 	if !checkCsvHeaders(records[0], requiredHeaders) {
-		return errors.New("acciones CSV: invalid csv headers")
+		return errors.New("error on BYMA tickers CSV: invalid csv headers")
 	}
 
-	var acciones []dtos.Accion
-
+	var tickers []dtos.Ticker
 	for idx, record := range records {
 		if idx == 0 {
 			continue
 		}
-		acciones = append(acciones, dtos.NewAccion(record))
+		tickers = append(tickers, dtos.NewTickerFromBYMAMarket(record))
 	}
 
-	if len(acciones) == 0 {
-		return errors.New("acciones CSV: no records found")
+	if len(tickers) == 0 {
+		return errors.New("error on BYMA tickers CSV: no records found")
 	}
 
-	server.Logger.Info("Acciones data read successfully. Found ", len(acciones), " records")
+	server.Logger.Info("BYMA tickers data read successfully. Found ", len(tickers), " records")
 
-	err = accionesRepository.InsertAllAccionesArgs(server, acciones)
+	err = tickersRepository.InsertTickersAll(server, tickers)
 	if err != nil {
-		return errors.New("error inserting Acciones: " + err.Error())
+		return errors.New("error inserting BYMA tickers: " + err.Error())
 	}
-	server.Logger.Info("Acciones inserted successfully")
+	server.Logger.Info("BYMA tickers inserted successfully")
 
 	return nil
 }

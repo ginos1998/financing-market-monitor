@@ -3,14 +3,14 @@ package readers
 import (
 	"errors"
 	"github.com/ginos1998/financing-market-monitor/data-ingest/config/server"
-	cedearsRepository "github.com/ginos1998/financing-market-monitor/data-ingest/internal/db/mongod/cedears"
+	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/db/mongod/tickersRepository"
 	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/models/dtos"
 )
 
 const cedearsFileName = "resources/CEDEARS_17-08-2024.csv"
 
 func ImportCedearsFromCsv(server server.Server) error {
-	server.Logger.Info("Importing cedears data from ", cedearsFileName)
+	server.Logger.Info("Importing CEDEARS data from ", cedearsFileName)
 	requiredHeaders := []string{"denom", "ticker", "ratio"}
 
 	records, err := openCsvFile(cedearsFileName)
@@ -21,17 +21,16 @@ func ImportCedearsFromCsv(server server.Server) error {
 		return errors.New("CEDEARs csv: invalid csv headers")
 	}
 
-	var cedears []dtos.Cedear
-
+	var tickers []dtos.Ticker
 	for idx, record := range records {
 		if idx == 0 {
 			continue
 		}
-		cedears = append(cedears, dtos.NewCedear(record))
+		tickers = append(tickers, dtos.NewTickerFromCEDEAR(record))
 	}
-	server.Logger.Info("Cedears data read successfully")
+	server.Logger.Info("CEDEARs data read successfully")
 
-	err = cedearsRepository.InsertAllCEDEARs(server, cedears)
+	err = tickersRepository.InsertTickersAll(server, tickers)
 	if err != nil {
 		return errors.New("error inserting CEDEARs: " + err.Error())
 	}
