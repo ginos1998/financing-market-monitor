@@ -75,7 +75,7 @@ func initFinnhubWebSocket(envVars map[string]string) (*websocket.Conn, error) {
 		logger.Fatalf("Failed to connect to Finnhub WebSocket: %v", err)
 	}
 
-	symbols := []string{"BINANCE:BTCUSDT"}
+	symbols := []string{"BINANCE:BTCUSDT", "AAPL", "TSLA", "AMZN", "MSFT"}
 	for _, s := range symbols {
 		msg, _ := json.Marshal(map[string]interface{}{"type": "subscribe", "symbol": s})
 		err := ws.WriteMessage(websocket.TextMessage, msg)

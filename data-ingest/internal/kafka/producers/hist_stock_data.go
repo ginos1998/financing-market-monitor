@@ -6,6 +6,7 @@ import (
 	"github.com/ginos1998/financing-market-monitor/data-ingest/config/server"
 	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/apis"
 	cedearsRepository "github.com/ginos1998/financing-market-monitor/data-ingest/internal/db/mongod/cedears"
+	cryptoRepository "github.com/ginos1998/financing-market-monitor/data-ingest/internal/db/mongod/cryptos"
 	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/models/dtos"
 )
 
@@ -92,6 +93,60 @@ func (p *KafkaProducer) UpdateHistoricalStockData(useYahooAPI bool, server serve
 			logger.Info("Trying again with Alphavantage API...")
 			p.UpdateHistoricalStockData(false, server)
 		}
+	}
+
+}
+
+func (p *KafkaProducer) UpdateCryptosTimesSeries(server server.Server) {
+	topic := server.EnvVars["KAFKA_TOPIC_CRYPTO_TIME_SERIES_DATA"]
+	if topic == "" {
+		logger.Error("envvar KAFKA_TOPIC_CRYPTO_TIME_SERIES_DATA not set")
+		return
+	}
+
+	cryptosToUpdate, err := cryptoRepository.GetCryptos(server.MongoRepository)
+	if err != nil {
+		logger.Error("Error getting cryptos without historical daily stock data: ", err)
+		return
+	}
+	logger.Info("Cryptos without historical daily stock data: ", len(cryptosToUpdate))
+
+	if len(cryptosToUpdate) == 0 {
+		logger.Info("No cedears without historical daily stock data")
+		return
+	}
+
+	logger.Info("Updating historical stock data...")
+	logger.Info("Cryptos to update: ", len(cryptosToUpdate))
+
+	var cryptosNotUpdated = make([]dtos.Crypto, 0)
+	var res []byte
+
+	for _, crypto := range cryptosToUpdate {
+		res, err = apis.GetDailyHistoricalStockData(crypto.YahooSymbol, server.EnvVars)
+		if err != nil {
+			logger.Error("Error getting data of ", crypto.YahooSymbol, " from Yahoo API: ", err)
+			cryptosNotUpdated = append(cryptosNotUpdated, crypto)
+			continue
+		}
+
+		logger.Info("Sending data of ", crypto.YahooSymbol, " to Kafka...")
+		err := p.produceOnTopic(topic, res)
+		if err != nil {
+			logger.Error("Error sending data of ", crypto.YahooSymbol, " to Kafka: ", err)
+			cryptosNotUpdated = append(cryptosNotUpdated, crypto)
+		}
+		logger.Info("Data of ", crypto.YahooSymbol, " sent to Kafka successfully")
+		time.Sleep(1 * time.Second)
+	}
+
+	logger.Info("The process has updated ", len(cryptosToUpdate)-len(cryptosNotUpdated), " cryptos")
+	if len(cryptosNotUpdated) > 0 {
+		var cedearsNotUpdatedTickers []string
+		for _, crypto := range cryptosNotUpdated {
+			cedearsNotUpdatedTickers = append(cedearsNotUpdatedTickers, crypto.YahooSymbol)
+		}
+		logger.Warn("The following cryptos could not be updated: ", cedearsNotUpdatedTickers)
 	}
 
 }

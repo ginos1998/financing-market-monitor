@@ -8,7 +8,6 @@ import (
 	"time"
 
 	srv "github.com/ginos1998/financing-market-monitor/data-processing/config/server"
-	indicatorsCron "github.com/ginos1998/financing-market-monitor/data-processing/internal/crons/indicators"
 	kafkaConsumer "github.com/ginos1998/financing-market-monitor/data-processing/internal/kafka/consumers"
 )
 
@@ -21,13 +20,13 @@ func main() {
 	server := srv.NewServer()
 	server.Logger.Info("Server configured")
 
-	err := indicatorsCron.CalculateMovingAverages(server)
-	if err != nil {
-		server.Logger.Fatalf("Error starting cron: %v", err)
-	}
+	//err := indicatorsCron.CalculateMovingAverages(server)
+	//if err != nil {
+	//	server.Logger.Fatalf("Error starting cron: %v", err)
+	//}
 
 	// consumes stock market data
-	consumer, err := kafkaConsumer.CrearteKafkaConsumer(*server)
+	consumer, err := kafkaConsumer.CreateKafkaConsumer(*server)
 	if err != nil {
 		server.Logger.Fatalf("Error creating kafka consumer: %v", err)
 	}
@@ -38,12 +37,17 @@ func main() {
 	}()
 
 	// consumes times series data
-	hsdConsumer, err := kafkaConsumer.CrearteKafkaConsumer(*server)
+	hsdConsumer, err := kafkaConsumer.CreateKafkaConsumer(*server)
 	if err != nil {
 		server.Logger.Fatalf("Error creating kafka historical stock data consumer: %v", err)
 	}
 	go func() {
 		if err := hsdConsumer.InitHistoricalStockDataConsumer(ctx, server.MongoRepository); err != nil {
+			server.Logger.Fatalf("Error running consumer: %v", err)
+		}
+	}()
+	go func() {
+		if err := hsdConsumer.ConsumesCryptoDailyTimeSeries(ctx, server.MongoRepository); err != nil {
 			server.Logger.Fatalf("Error running consumer: %v", err)
 		}
 	}()

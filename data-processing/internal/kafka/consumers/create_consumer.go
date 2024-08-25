@@ -16,7 +16,7 @@ type Consumer struct {
 var logger *logrus.Logger
 var topicsMap map[string]string
 
-func CrearteKafkaConsumer(server server.Server) (*Consumer, error) {
+func CreateKafkaConsumer(server server.Server) (*Consumer, error) {
 	loadKafkaTopics(server.EnvVars)
 	kafkaServer := server.EnvVars["KAFKA_SERVER"]
 	kafkaGroupId := server.EnvVars["KAFKA_GROUP_ID"]
@@ -52,5 +52,6 @@ func loadKafkaTopics(envVars map[string]string) {
 	topicsMap = map[string]string{
 		"KAFKA_TOPIC_TIME_SERIES_DATA":         envVars["KAFKA_TOPIC_TIME_SERIES_DATA"],
 		"KAFKA_TOPIC_STREAM_STOCK_MARKET_DATA": envVars["KAFKA_TOPIC_STREAM_STOCK_MARKET_DATA"],
+		"KAFKA_TOPIC_CRYPTO_TIME_SERIES_DATA":  envVars["KAFKA_TOPIC_CRYPTO_TIME_SERIES_DATA"],
 	}
 }

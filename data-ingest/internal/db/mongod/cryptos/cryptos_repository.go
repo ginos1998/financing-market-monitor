@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ginos1998/financing-market-monitor/data-processing/config/mongod"
-	"github.com/ginos1998/financing-market-monitor/data-processing/internal/models/dtos"
+	"github.com/ginos1998/financing-market-monitor/data-ingest/config/mongod"
+	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/models/dtos"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -47,21 +47,4 @@ func GetCryptoBySymbol(mongoRepository mongod.MongoRepository, symbol string) (*
 	}
 
 	return &crypto, nil
-}
-
-func UpdateCryptoTimeSeriesData(mongoRepository mongod.MongoRepository, crypto dtos.Crypto) error {
-	cryptosCollection := mongoRepository.Collections[cryptosCollectionName]
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	filter := bson.D{{Key: "yahooSymbol", Value: crypto.YahooSymbol}}
-	update := bson.D{{Key: "$set", Value: bson.D{{Key: "time_series_daily", Value: crypto.TimeSeriesDaily}}}}
-
-	_, err := cryptosCollection.UpdateOne(ctx, filter, update)
-	if err != nil {
-		return errors.New("CryptosRepository: Error updating crypto " + crypto.YahooSymbol + ": " + err.Error())
-	}
-
-	return nil
 }
