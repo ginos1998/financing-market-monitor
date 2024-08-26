@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+
 	"github.com/ginos1998/financing-market-monitor/data-processing/config/mongod"
 	"github.com/ginos1998/financing-market-monitor/data-processing/config/redis"
 	"github.com/sirupsen/logrus"

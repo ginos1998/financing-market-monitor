@@ -8,4 +8,5 @@ type Ticker struct {
 	OriginSymbol     string `bson:"origin_symbol"`
 	TimeSeriesDaily  Data   `bson:"time_series_daily"`
 	TimeSeriesWeekly Data   `bson:"time_series_weekly"`
+	IsCrypto         bool   `bson:"is_crypto"`
 }

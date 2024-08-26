@@ -8,12 +8,12 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/models/dtos"
 )
 
 const periodFrom = 946684800 // 01/01/2000
-const periodTo = 1723324741  // 01/01/2025
 const yahooFinanceURL = "/download/%s?period1=%d&period2=%d&interval=%s&events=history&includeAdjustedClose=true"
 
 func FindSymbolTimeSeriesData(stockSymbol string, period string, envvars map[string]string) ([]byte, error) {
@@ -25,7 +25,7 @@ func FindSymbolTimeSeriesData(stockSymbol string, period string, envvars map[str
 	if period != "" {
 		p = period
 	}
-
+	periodTo := time.Now().Unix()
 	url := fmt.Sprintf(yahooURL+yahooFinanceURL, stockSymbol, periodFrom, periodTo, p)
 
 	logger.Info("Getting historical stock data from Yahoo Finance API for ", stockSymbol)

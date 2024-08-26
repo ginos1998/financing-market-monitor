@@ -87,3 +87,54 @@ func UpdateTickerTimeSeriesWeekly(mongoRepository mongod.MongoRepository, ticker
 
 	return nil
 }
+
+func GetTickersWithTimeSeriesData(repository mongod.MongoRepository) ([]dtos.Ticker, error) {
+	tickersCollection := repository.Collections[tickersCollectionName]
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	timeSeriesLimit := 200
+
+	pipeline := mongo.Pipeline{
+		{{"$match", bson.D{
+			{"$and", bson.A{
+				bson.D{{"is_crypto", false}},
+				bson.D{{"time_series_daily.timeseriesdata", bson.D{{"$ne", nil}}}},
+			}},
+		}}},
+		{{"$project", bson.D{
+			{"_id", 0},
+			{"symbol", 1},
+			{"time_series_daily.symbol", 1},
+			{"time_series_daily.lastrefreshed", 1},
+			{"time_series_daily.timeseriestype", 1},
+			{"time_series_daily.timeseriesdata", bson.D{
+				{"$slice", bson.A{
+					bson.D{{"$reverseArray", "$time_series_daily.timeseriesdata"}},
+					timeSeriesLimit,
+				}},
+			}},
+			{"time_series_weekly.symbol", 1},
+			{"time_series_weekly.lastrefreshed", 1},
+			{"time_series_weekly.timeseriestype", 1},
+			{"time_series_weekly.timeseriesdata", bson.D{
+				{"$slice", bson.A{
+					bson.D{{"$reverseArray", "$time_series_weekly.timeseriesdata"}},
+					timeSeriesLimit,
+				}},
+			}},
+		}}},
+	}
+	res, err := tickersCollection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, errors.New("GetTickersWithTimeSeriesData error: " + err.Error())
+	}
+
+	var tickers []dtos.Ticker
+	if err = res.All(ctx, &tickers); err != nil {
+		return nil, errors.New("GetTickersWithTimeSeriesData error: " + err.Error())
+	}
+
+	return tickers, nil
+}
