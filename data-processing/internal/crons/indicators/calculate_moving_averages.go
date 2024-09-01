@@ -21,7 +21,7 @@ var logger logrus.Logger
 func PrepareMovingAveragesData(s *server.Server) error {
 	logger = *s.Logger
 	c := cron.New()
-	_, err := c.AddFunc("22 21 * * *", // every day at 9:10 AM
+	_, err := c.AddFunc("31 10 * * *", // every day at 9:10 AM
 		func() {
 			manageMovingAverages(&s.RedisClient, s.MongoRepository)
 		})
@@ -34,7 +34,7 @@ func PrepareMovingAveragesData(s *server.Server) error {
 
 func CalculateMovingAverages(s *server.Server) error {
 	c := cron.New()
-	_, err := c.AddFunc("@every 2m",
+	_, err := c.AddFunc("@every 1h",
 		func() {
 			calculateWMA21(&s.RedisClient)
 		})

@@ -45,7 +45,8 @@ func (p *KafkaProducer) streamStockMarketData(ws *websocket.Conn) error {
 		err := ws.ReadJSON(&msg)
 		if err != nil {
 			logger.Error("Finnhub Websocket: Failed to read message: ", err)
-			panic(err)
+			time.Sleep(1 * time.Second)
+			continue
 		}
 		jsonMsg, _ := json.Marshal(msg)
 
@@ -56,7 +57,7 @@ func (p *KafkaProducer) streamStockMarketData(ws *websocket.Conn) error {
 		}
 		logger.Info(topic + " | Message send")
 
-		time.Sleep(10 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 
 	p.FlushAndCloseKafkaProducer()
@@ -75,7 +76,7 @@ func initFinnhubWebSocket(envVars map[string]string) (*websocket.Conn, error) {
 		logger.Fatalf("Failed to connect to Finnhub WebSocket: %v", err)
 	}
 
-	symbols := []string{"BINANCE:BTCUSDT", "AAPL", "TSLA", "AMZN", "MSFT"}
+	symbols := []string{"AAPL", "TSLA", "AMZN", "MSFT", "GOLD", "INTC", "SLB", "KO", "PEP", "MELI", "GLOB", "NKE", "SBUX"} // BINANCE:BTCUSDT",
 	for _, s := range symbols {
 		msg, _ := json.Marshal(map[string]interface{}{"type": "subscribe", "symbol": s})
 		err := ws.WriteMessage(websocket.TextMessage, msg)
