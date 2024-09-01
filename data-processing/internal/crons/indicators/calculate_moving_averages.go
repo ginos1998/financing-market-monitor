@@ -12,6 +12,7 @@ import (
 	"github.com/ginos1998/financing-market-monitor/data-processing/internal/indicators"
 	"github.com/ginos1998/financing-market-monitor/data-processing/internal/models/dtos"
 	redisServices "github.com/ginos1998/financing-market-monitor/data-processing/internal/services/redis"
+
 	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 )
@@ -94,6 +95,9 @@ func calculateWMA21(redisClient *redis.RedisClient) {
 		}
 		prices = append(prices, dailyPrices...)
 		wma21 := indicators.WMA(prices, 21)
-		logger.Infof("Symbol: %s, WMA21: %f", symbol, wma21)
+		sma30 := indicators.SMA(prices, 30)
+		ema150 := indicators.EMA(prices, 150)
+		ema200 := indicators.EMA(prices, 200)
+		logger.Infof("Symbol: %s, WMA21: %f, SMA30: %f, EMA150: %f, EMA200: %f", symbol, wma21, sma30, ema150[0], ema200[0])
 	}
 }
