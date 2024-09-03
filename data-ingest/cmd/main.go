@@ -1,53 +1,30 @@
 package main
 
 import (
-	"time"
-
-	appCfg 			"github.com/ginos1998/financing-market-monitor/data-ingest/config"
-	mdb 			"github.com/ginos1998/financing-market-monitor/data-ingest/internal/db/mongod"
-	appKafka 		"github.com/ginos1998/financing-market-monitor/data-ingest/internal/kafka"
-	kafkaProducers	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/kafka/producers"
-	apis 			"github.com/ginos1998/financing-market-monitor/data-ingest/internal/apis"
-	
-	"github.com/sirupsen/logrus"
+	appCfg "github.com/ginos1998/financing-market-monitor/data-ingest/config"
+	srv "github.com/ginos1998/financing-market-monitor/data-ingest/config/server"
+	crons "github.com/ginos1998/financing-market-monitor/data-ingest/internal/crons/stock_data"
+	kafkaProducers "github.com/ginos1998/financing-market-monitor/data-ingest/internal/kafka/producers"
 )
+
 func main() {
-	log := logrus.New()
-	log.SetFormatter(&logrus.TextFormatter{
-		DisableColors: false,
-		DisableTimestamp: false,
-		FullTimestamp: true,
-		TimestampFormat: time.RFC3339,
-	})
-
 	doneChan := appCfg.InitSignalHandler()
-	err := appCfg.LoadEnvVars()
-	if err != nil { 
-		log.Fatal("Error loading environment variables: ", err)
-	}
 
-	mongocli, err := mdb.CreateMongoClient()
+	server := srv.NewServer()
+	server.Logger.Info("Server configured")
+
+	producer, err := kafkaProducers.CreateKafkaProducer(*server)
 	if err != nil {
-		log.Fatal("Error creating MongoDB client: ", err)
+		server.Logger.Fatal("Error creating Kafka producer: ", err)
 	}
+	server.Logger.Info("Kafka producer created")
 
-	alphavantageApi := apis.AlphavantageAPI{}
-	test := false
-	err = alphavantageApi.ConfigAlphavantageAPI(test)
-	if err != nil {
-		log.Fatal("Error configuring Alphavantage API: ", err)
-	}
+	crons.InitHistStockDataProducer(producer, *server)
 
-	producer, err := appKafka.CreateKafkaProducer()
-	if err != nil {
-		log.Fatal("Error creating Kafka producer: ", err)
-	}
-	
-	go kafkaProducers.InitStreamStockMarketDataProducer(producer)
-	go kafkaProducers.InitHistStockDataProducer(producer, &alphavantageApi, mongocli)
+	go producer.InitStreamStockMarketDataProducer(*server)
 
-	log.Info("Press Ctrl+C to exit...")
+	server.Logger.Info("Press Ctrl+C to exit...")
 	<-doneChan
-	kafkaProducers.FlushAndCloseKafkaProducer()
-	log.Info("Exiting...")
+	producer.FlushAndCloseKafkaProducer()
+	server.Logger.Info("Exiting...")
 }
