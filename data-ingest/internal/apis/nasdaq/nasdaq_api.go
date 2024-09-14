@@ -63,11 +63,16 @@ type Status struct {
 
 const fromDate = "2000-01-01"
 const limit = 9999
+const queryParams = "?assetclass=%s&fromdate=%s&limit=%d&todate=%s&random=%d"
 
-func FindSymbolTimeSeriesData(stockSymbol string) ([]byte, error) {
+func FindSymbolTimeSeriesData(stockSymbol string, assetClass string, envVars map[string]string) ([]byte, error) {
+	nasdaqApiURL := envVars["NASDAQ_API_URL"]
+	if nasdaqApiURL == "" {
+		return nil, errors.New("variable NASDAQ_API_URL not set")
+	}
 	currentDate := time.Now().Format("2006-01-02")
 	n := rand.Intn(100)
-	url := fmt.Sprintf("https://api.nasdaq.com/api/quote/%s/historical?assetclass=stocks&fromdate=%s&limit=%d&todate=%s&random=%d", stockSymbol, fromDate, limit, currentDate, n)
+	url := fmt.Sprintf(nasdaqApiURL+queryParams, stockSymbol, assetClass, fromDate, limit, currentDate, n)
 
 	log.Println("Getting historical stock data from Nasdaq API for ", stockSymbol)
 
