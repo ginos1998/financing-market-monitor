@@ -4,7 +4,8 @@ import (
 	"time"
 
 	"github.com/ginos1998/financing-market-monitor/data-ingest/config/server"
-	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/apis"
+	//"github.com/ginos1998/financing-market-monitor/data-ingest/internal/apis"
+	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/apis/nasdaq"
 	tickersRepository "github.com/ginos1998/financing-market-monitor/data-ingest/internal/db/mongod/tickers"
 	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/models/dtos"
 )
@@ -17,7 +18,7 @@ func (p *KafkaProducer) UpdateTickersTimeSeries(server server.Server) {
 		logger.Error("envvar KAFKA_TOPIC_TIME_SERIES_DATA not set")
 		return
 	}
-	apis.SetLogger(server.Logger)
+	//apis.SetLogger(server.Logger)
 	tickersToUpdate, err := tickersRepository.GetTickersWithoutTimeSeries(server)
 	if err != nil {
 		logger.Error("Error getting tickers without time series: ", err)
@@ -44,7 +45,8 @@ func (p *KafkaProducer) UpdateTickersTimeSeries(server server.Server) {
 			if period == "1wk" && ticker.TimeSeriesWeekly.TimeSeriesData != nil {
 				continue
 			}
-			res, err = apis.FindSymbolTimeSeriesData(ticker.Symbol, period, server.EnvVars)
+			res, err = nasdaq.FindSymbolTimeSeriesData(ticker.Symbol)
+			//res, err = apis.FindSymbolTimeSeriesData(ticker.Symbol, period, server.EnvVars)
 			if err != nil {
 				logger.Error("Error getting ", period, " data of ", ticker.Symbol, " from Yahoo API: ", err)
 				tickersNotUpdated = append(tickersNotUpdated, ticker)

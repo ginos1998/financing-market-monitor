@@ -19,19 +19,23 @@ func (p *KafkaProducer) InitStreamStockMarketDataProducer(server server.Server) 
 		server.Logger.Fatal("KAFKA_TOPIC_STREAM_STOCK_MARKET_DATA not set")
 	}
 
-	ws, err := initFinnhubWebSocket(server.EnvVars)
-	if err != nil {
-		server.Logger.Fatal("Error initializing Finnhub WebSocket: ", err)
-	}
-
-	err = p.streamStockMarketData(ws)
+	err := p.streamStockMarketData(server.EnvVars)
 	if err != nil {
 		server.Logger.Fatal("Error streaming stock market data: ", err)
 	}
 }
 
-func (p *KafkaProducer) streamStockMarketData(ws *websocket.Conn) error {
+func (p *KafkaProducer) streamStockMarketData(envVars map[string]string) error {
+	ws, err := initFinnhubWebSocket(envVars)
+	if err != nil {
+		logger.Fatal("Error initializing Finnhub WebSocket: ", err)
+	}
+	connected := true
 	defer func(ws *websocket.Conn) {
+		if ws.NetConn() == nil {
+			logger.Info("Finnhub WebSocket already closed")
+			return
+		}
 		err := ws.Close()
 		if err != nil {
 			logger.Error("Failed to close Finnhub WebSocket: ", err)
@@ -41,12 +45,13 @@ func (p *KafkaProducer) streamStockMarketData(ws *websocket.Conn) error {
 	logger.Info("Streaming stock market data")
 
 	var msg interface{}
-	for {
+	for connected {
 		err := ws.ReadJSON(&msg)
 		if err != nil {
 			logger.Error("Finnhub Websocket: Failed to read message: ", err)
 			time.Sleep(1 * time.Second)
-			continue
+			connected = false
+			break
 		}
 		jsonMsg, _ := json.Marshal(msg)
 
@@ -58,6 +63,10 @@ func (p *KafkaProducer) streamStockMarketData(ws *websocket.Conn) error {
 		logger.Info(topic + " | Message send")
 
 		time.Sleep(1 * time.Second)
+	}
+
+	if !connected {
+		_ = p.streamStockMarketData(envVars)
 	}
 
 	p.FlushAndCloseKafkaProducer()
@@ -76,7 +85,8 @@ func initFinnhubWebSocket(envVars map[string]string) (*websocket.Conn, error) {
 		logger.Fatalf("Failed to connect to Finnhub WebSocket: %v", err)
 	}
 
-	symbols := []string{"AAPL", "TSLA", "AMZN", "MSFT", "GOLD", "INTC", "SLB", "KO", "PEP", "MELI", "GLOB", "NKE", "SBUX"} // BINANCE:BTCUSDT",
+	//symbols := []string{"AAPL", "TSLA", "AMZN", "MSFT", "GOLD", "INTC", "SLB", "KO", "PEP", "MELI", "GLOB", "NKE", "SBUX"} // BINANCE:BTCUSDT",
+	symbols := []string{"BINANCE:BTCUSDT"}
 	for _, s := range symbols {
 		msg, _ := json.Marshal(map[string]interface{}{"type": "subscribe", "symbol": s})
 		err := ws.WriteMessage(websocket.TextMessage, msg)

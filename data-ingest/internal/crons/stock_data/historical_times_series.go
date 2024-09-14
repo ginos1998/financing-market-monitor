@@ -12,7 +12,7 @@ import (
 func InitHistStockDataProducer(producer *producers.KafkaProducer, server server.Server) {
 	server.Logger.Info("Cron <UpdateTickersTimeSeries> created. Schedule: every day at 9:10 AM")
 	c := cron.New()
-	_, err := c.AddFunc("21 21 * * *", // every day at 9:10 AM
+	_, err := c.AddFunc("22 13 * * *", // every day at 9:10 AM
 		func() {
 			server.Logger.Info("Cron <UpdateTickersTimeSeries> started at ", time.Now().Format(time.RFC3339))
 			producer.UpdateTickersTimeSeries(server)
