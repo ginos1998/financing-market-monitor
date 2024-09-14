@@ -3,6 +3,7 @@ package redis
 import (
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	redisDb "github.com/ginos1998/financing-market-monitor/data-processing/config/redis"
@@ -44,16 +45,20 @@ func SetSymbolsTimeSeries(redisClient *redisDb.RedisClient, tickers []dtos.Ticke
 }
 
 func CreateOrUpdateSymbolPrices(redisClient *redisDb.RedisClient, symbol string, lastPrice float64) error {
-	symbolPrices, err := redisRepository.GetIntraDaySymbolPrices(redisClient, symbol)
-	if err != nil {
+	symbolKey := fmt.Sprintf("%s_%s", "INTRA-DAY", symbol)
+	symbolPrices, err := redisRepository.GetIntraDaySymbolPrices(redisClient, symbolKey)
+	if err != nil || symbolPrices == "" {
+		log.Printf("Creating symbol prices for symbol %s\n", symbol)
 		err = createSymbolPrices(redisClient, symbol, lastPrice)
 		if err != nil {
-			return err
+			return errors.New("Error creating symbol prices: " + err.Error())
 		}
+		return nil
 	}
-	err = updateSymbolPrices(redisClient, symbol, lastPrice, symbolPrices)
+	log.Printf("Updating symbol prices for symbol %s\n", symbol)
+	err = updateSymbolPrices(redisClient, symbolKey, lastPrice, symbolPrices)
 	if err != nil {
-		return err
+		return errors.New("Error updating symbol prices: " + err.Error())
 	}
 	return nil
 }
@@ -83,12 +88,12 @@ func createSymbolPrices(redisClient *redisDb.RedisClient, symbol string, lastPri
 	newSymbolValues := dtos.NewIntraDayPrices(lastPrice, lastPrice, lastPrice, lastPrice)
 	newSymbolValuesJson, err := newSymbolValues.ToJSON()
 	if err != nil {
-		return err
+		return errors.New("Error marshalling new symbol values: " + err.Error())
 	}
 	symbolKey := fmt.Sprintf("%s_%s", "INTRA-DAY", symbol)
 	err = redisRepository.SetIntraDaySymbolPrices(redisClient, symbolKey, newSymbolValuesJson)
 	if err != nil {
-		return err
+		return errors.New("Error setting new symbol values: " + err.Error())
 	}
 	return nil
 }

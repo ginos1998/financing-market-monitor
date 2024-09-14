@@ -28,16 +28,19 @@ func NewServer() *Server {
 	if err != nil {
 		logger.Fatal("Error loading environment variables: ", err)
 	}
+	logger.Info("Environment variables loaded")
 
 	mongoRepository, err := mongod.CreateMongoClient(envVars)
 	if err != nil {
 		logger.Fatal("Error creating MongoDB client: ", err)
 	}
+	logger.Info("Connected to MongoDB. Client created")
 
 	redisClient, err := redis.NewRedisClient(envVars)
 	if err != nil {
 		logger.Fatal("Error creating Redis client: ", err)
 	}
+	logger.Info("Connected to Redis. Client created")
 
 	return &Server{
 		EnvVars:         envVars,
