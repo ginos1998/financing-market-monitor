@@ -9,6 +9,7 @@ type Ticker struct {
 	TimeSeriesDaily  Data   `bson:"time_series_daily"`
 	TimeSeriesWeekly Data   `bson:"time_series_weekly"`
 	IsCrypto         bool   `bson:"is_crypto"`
+	AssetClass       string `bson:"asset_class"`
 }
 
 func NewTickerFromBYMAMarket(record []string) Ticker {
