@@ -9,7 +9,7 @@ import (
 	"github.com/ginos1998/financing-market-monitor/data-ingest/internal/models/dtos"
 )
 
-var periods = []string{"1d", "1wk"}
+var periods = []string{"1d"} // nasdaqApi only provides daily time series, "1wk"}
 
 func (p *KafkaProducer) UpdateTickersTimeSeries(server server.Server) {
 	topic := server.EnvVars["KAFKA_TOPIC_TIME_SERIES_DATA"]
@@ -43,7 +43,7 @@ func (p *KafkaProducer) UpdateTickersTimeSeries(server server.Server) {
 			if period == "1wk" && ticker.TimeSeriesWeekly.TimeSeriesData != nil {
 				continue
 			}
-			res, err = nasdaq.FindSymbolTimeSeriesData(ticker.Symbol, "stocks", server.EnvVars)
+			res, err = nasdaq.FindSymbolTimeSeriesData(ticker.Symbol, ticker.AssetClass, server.EnvVars)
 			if err != nil {
 				logger.Error("Error getting ", period, " data of ", ticker.Symbol, " from Yahoo API: ", err)
 				tickersNotUpdated = append(tickersNotUpdated, ticker)
