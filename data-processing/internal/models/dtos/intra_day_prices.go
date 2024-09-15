@@ -3,18 +3,20 @@ package dtos
 import "encoding/json"
 
 type IntraDayPrices struct {
-	Low     float64 `json:"low"`
-	High    float64 `json:"high"`
-	Open    float64 `json:"open"`
-	Current float64 `json:"current"`
+	Low      float64 `json:"low"`
+	High     float64 `json:"high"`
+	Open     float64 `json:"open"`
+	Current  float64 `json:"current"`
+	Previous float64 `json:"previous"`
 }
 
 func NewIntraDayPrices(low, high, open, current float64) *IntraDayPrices {
 	return &IntraDayPrices{
-		Low:     low,
-		High:    high,
-		Open:    open,
-		Current: current,
+		Low:      low,
+		High:     high,
+		Open:     open,
+		Current:  current,
+		Previous: current,
 	}
 }
 

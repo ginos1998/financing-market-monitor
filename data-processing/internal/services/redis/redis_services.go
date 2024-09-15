@@ -3,7 +3,6 @@ package redis
 import (
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	redisDb "github.com/ginos1998/financing-market-monitor/data-processing/config/redis"
@@ -44,30 +43,39 @@ func SetSymbolsTimeSeries(redisClient *redisDb.RedisClient, tickers []dtos.Ticke
 	return nil
 }
 
-func CreateOrUpdateSymbolPrices(redisClient *redisDb.RedisClient, symbol string, lastPrice float64) error {
+func GetIntraDaySymbolPrices(redisClient *redisDb.RedisClient, symbol string) (string, error) {
+	symbolPrices, err := redisRepository.GetIntraDaySymbolPrices(redisClient, symbol)
+	if err != nil {
+		return "", errors.New("Error getting intra day symbol prices: " + err.Error())
+	}
+	return symbolPrices, nil
+}
+
+func CreateOrUpdateSymbolPrices(redisClient *redisDb.RedisClient, symbol string, lastPrice float64, updatesPrevious bool) error {
 	symbolKey := fmt.Sprintf("%s_%s", "INTRA-DAY", symbol)
-	symbolPrices, err := redisRepository.GetIntraDaySymbolPrices(redisClient, symbolKey)
+	symbolPrices, err := GetIntraDaySymbolPrices(redisClient, symbolKey)
 	if err != nil || symbolPrices == "" {
-		log.Printf("Creating symbol prices for symbol %s\n", symbol)
 		err = createSymbolPrices(redisClient, symbol, lastPrice)
 		if err != nil {
 			return errors.New("Error creating symbol prices: " + err.Error())
 		}
 		return nil
 	}
-	log.Printf("Updating symbol prices for symbol %s\n", symbol)
-	err = updateSymbolPrices(redisClient, symbolKey, lastPrice, symbolPrices)
+	err = updateSymbolPrices(redisClient, symbolKey, lastPrice, symbolPrices, updatesPrevious)
 	if err != nil {
 		return errors.New("Error updating symbol prices: " + err.Error())
 	}
 	return nil
 }
 
-func updateSymbolPrices(redisClient *redisDb.RedisClient, symbol string, lastPrice float64, symbolPrices string) error {
+func updateSymbolPrices(redisClient *redisDb.RedisClient, symbol string, lastPrice float64, symbolPrices string, updatesPrevious bool) error {
 	symbolValues := dtos.IntraDayPrices{}
 	err := symbolValues.FromJSON(symbolPrices)
 	if err != nil {
 		return err
+	}
+	if updatesPrevious {
+		symbolValues.Previous = symbolValues.Current
 	}
 	symbolValues.Current = lastPrice
 	sortSymbolPrices(&symbolValues)

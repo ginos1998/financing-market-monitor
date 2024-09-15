@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/ginos1998/financing-market-monitor/data-processing/internal/crons/alerts"
 	"os"
 	"os/signal"
 	"syscall"
@@ -63,6 +64,10 @@ func startCrons(server *srv.Server) error {
 		return err
 	}
 	err = indicatorsCron.CalculateMovingAverages(server)
+	if err != nil {
+		return err
+	}
+	err = alerts.StartAlertsCron(server)
 	if err != nil {
 		return err
 	}
