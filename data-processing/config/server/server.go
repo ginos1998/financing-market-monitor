@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 
+	"github.com/ginos1998/financing-market-monitor/data-processing/config/discord"
 	"github.com/ginos1998/financing-market-monitor/data-processing/config/mongod"
 	"github.com/ginos1998/financing-market-monitor/data-processing/config/redis"
 	"github.com/sirupsen/logrus"
@@ -13,6 +14,7 @@ type Server struct {
 	Logger          *logrus.Logger
 	MongoRepository mongod.MongoRepository
 	RedisClient     redis.RedisClient
+	DiscordClient   *discord.Client
 }
 
 func NewServer() *Server {
@@ -42,11 +44,18 @@ func NewServer() *Server {
 	}
 	logger.Info("Connected to Redis. Client created")
 
+	discordClient, err := discord.NewClient("", *mongoRepository)
+	if err != nil {
+		logger.Fatal("Error creating Discord client: ", err)
+	}
+	logger.Infof("Discord client created with %d webhooks", len(discordClient.Webhooks))
+
 	return &Server{
 		EnvVars:         envVars,
 		Logger:          logger,
 		MongoRepository: *mongoRepository,
 		RedisClient:     *redisClient,
+		DiscordClient:   discordClient,
 	}
 }
 

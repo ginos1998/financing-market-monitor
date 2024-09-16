@@ -21,3 +21,7 @@ func (a *Alert) ToString() string {
 	return fmt.Sprintf("Alert: {Id: %s, Symbol: %s, Price: %f, Type: %s, Name: %s, Message: %s}",
 		a.Id.Hex(), a.Symbol, a.Price, a.Type, a.Name, a.Message)
 }
+
+func (a *Alert) AlertMessageFull() string {
+	return fmt.Sprintf("%s | %s is %s price %f: %s", a.Name, a.Symbol, a.Type, a.Price, a.Message)
+}

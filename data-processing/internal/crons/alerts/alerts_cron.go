@@ -17,7 +17,7 @@ func StartAlertsCron(s *server.Server) error {
 	c := cron.New()
 	_, err := c.AddFunc("@every 30s", // every day at 9:10 AM
 		func() {
-			manageAlerts(&s.RedisClient, s.MongoRepository)
+			manageAlerts(s, &s.RedisClient, s.MongoRepository)
 		})
 	if err != nil {
 		return err
@@ -26,7 +26,7 @@ func StartAlertsCron(s *server.Server) error {
 	return nil
 }
 
-func manageAlerts(redisClient *redis.RedisClient, mongoRepository mongod.MongoRepository) {
+func manageAlerts(server *server.Server, redisClient *redis.RedisClient, mongoRepository mongod.MongoRepository) {
 	logger.Info("ALERTS CRON | Checking alerts...")
 	alerts, err := alertService.FindActiveAlerts(mongoRepository)
 	if err != nil {
@@ -40,7 +40,7 @@ func manageAlerts(redisClient *redis.RedisClient, mongoRepository mongod.MongoRe
 	}
 	logger.Infof("ALERTS CRON | Found %d active alerts", len(alerts))
 
-	alertsTriggered, err := alertService.ProcessAlerts(mongoRepository, redisClient, alerts)
+	alertsTriggered, err := alertService.ProcessAlerts(server, alerts)
 	if err != nil {
 		logger.Errorf("Error processing alerts:\n%v\nCause:%v", alerts, err)
 		return

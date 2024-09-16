@@ -3,13 +3,17 @@ package alerts
 import (
 	"errors"
 	"fmt"
+
+	"github.com/ginos1998/financing-market-monitor/data-processing/config/discord"
 	"github.com/ginos1998/financing-market-monitor/data-processing/config/mongod"
-	"github.com/ginos1998/financing-market-monitor/data-processing/config/redis"
+	"github.com/ginos1998/financing-market-monitor/data-processing/config/server"
 	alertService "github.com/ginos1998/financing-market-monitor/data-processing/internal/db/mongod/alerts"
 	alertsRepository "github.com/ginos1998/financing-market-monitor/data-processing/internal/db/mongod/alerts"
+	ds "github.com/ginos1998/financing-market-monitor/data-processing/internal/integrations/discord"
 	"github.com/ginos1998/financing-market-monitor/data-processing/internal/models/dtos"
 	alertsDTO "github.com/ginos1998/financing-market-monitor/data-processing/internal/models/dtos/alerts"
 	redisService "github.com/ginos1998/financing-market-monitor/data-processing/internal/services/redis"
+
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -29,11 +33,12 @@ func FindActiveAlerts(mdb mongod.MongoRepository) ([]alertsDTO.Alert, error) {
 	return alertService.FindActiveAlerts(mdb)
 }
 
-func ProcessAlerts(mdb mongod.MongoRepository, redisClient *redis.RedisClient, alerts []alertsDTO.Alert) ([]alertsDTO.Alert, error) {
+func ProcessAlerts(server *server.Server, alerts []alertsDTO.Alert) ([]alertsDTO.Alert, error) {
+	logger = *server.Logger
 	triggeredAlerts := make([]alertsDTO.Alert, 0)
 	for _, alert := range alerts {
 		symbolKey := fmt.Sprintf("INTRA-DAY_%s", alert.Symbol)
-		symbolPrices, err := redisService.GetIntraDaySymbolPrices(redisClient, symbolKey)
+		symbolPrices, err := redisService.GetIntraDaySymbolPrices(&server.RedisClient, symbolKey)
 		if err != nil || symbolPrices == "" {
 			logger.Warnf("Couldn't process alert %s, symbol prices not found for symbol %s", alert.Id, alert.Symbol)
 			continue
@@ -47,14 +52,8 @@ func ProcessAlerts(mdb mongod.MongoRepository, redisClient *redis.RedisClient, a
 		}
 
 		if _, exists := alertTypes[alert.Type]; exists && alertTypes[alert.Type](alert.Price, symbolValues) {
-			err = triggerAlert(alert)
-			if err != nil {
-				errorMessage := fmt.Sprintf("Error triggering alert %s: %v", alert.Id, err)
-				logger.Error(errorMessage)
-				continue
-			}
 			if alert.Trigger == "once" {
-				err = DisableAlert(mdb, alert.Id)
+				err = DisableAlert(server.MongoRepository, alert.Id)
 			}
 			if err != nil {
 				errorMessage := fmt.Sprintf("Error disabling alert %s: %v", alert.Id, err)
@@ -64,6 +63,12 @@ func ProcessAlerts(mdb mongod.MongoRepository, redisClient *redis.RedisClient, a
 			triggeredAlerts = append(triggeredAlerts, alert)
 		}
 	}
+	err := triggerAlerts(triggeredAlerts, *server.DiscordClient)
+	if err != nil {
+		errorMessage := fmt.Sprintf("Error triggering alerts: %v. Cause: %v", triggeredAlerts, err.Error())
+		logger.Error(errorMessage)
+		return nil, errors.New(errorMessage)
+	}
 	return triggeredAlerts, nil
 }
 
@@ -71,8 +76,13 @@ func DisableAlert(mdb mongod.MongoRepository, alertId primitive.ObjectID) error 
 	return alertsRepository.DisableAlertById(mdb, alertId)
 }
 
-func triggerAlert(alert alertsDTO.Alert) error {
-	logger.Info("Alert triggered: ", alert.ToString())
+func triggerAlerts(alert []alertsDTO.Alert, dsCli discord.Client) error {
+	for _, alert := range alert {
+		err := ds.NotifyAlert(dsCli, alert.AlertMessageFull())
+		if err != nil {
+			return errors.New("Error triggering alert: " + err.Error())
+		}
+	}
 	return nil
 }
 
