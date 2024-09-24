@@ -46,3 +46,15 @@ type Data struct {
 type RateLimitResponse struct {
 	Information string `json:"Information"`
 }
+
+func (ts TimeSeries) New(date string, open, high, low, close, adjClose float64, volume int64) TimeSeries {
+	return TimeSeries{
+		Date:     date,
+		Open:     open,
+		High:     high,
+		Low:      low,
+		Close:    close,
+		AdjClose: adjClose,
+		Volume:   volume,
+	}
+}

@@ -43,26 +43,39 @@ func SetSymbolsTimeSeries(redisClient *redisDb.RedisClient, tickers []dtos.Ticke
 	return nil
 }
 
-func CreateOrUpdateSymbolPrices(redisClient *redisDb.RedisClient, symbol string, lastPrice float64) error {
+func GetIntraDaySymbolPrices(redisClient *redisDb.RedisClient, symbol string) (string, error) {
 	symbolPrices, err := redisRepository.GetIntraDaySymbolPrices(redisClient, symbol)
 	if err != nil {
+		return "", errors.New("Error getting intra day symbol prices: " + err.Error())
+	}
+	return symbolPrices, nil
+}
+
+func CreateOrUpdateSymbolPrices(redisClient *redisDb.RedisClient, symbol string, lastPrice float64, updatesPrevious bool) error {
+	symbolKey := fmt.Sprintf("%s_%s", "INTRA-DAY", symbol)
+	symbolPrices, err := GetIntraDaySymbolPrices(redisClient, symbolKey)
+	if err != nil || symbolPrices == "" {
 		err = createSymbolPrices(redisClient, symbol, lastPrice)
 		if err != nil {
-			return err
+			return errors.New("Error creating symbol prices: " + err.Error())
 		}
+		return nil
 	}
-	err = updateSymbolPrices(redisClient, symbol, lastPrice, symbolPrices)
+	err = updateSymbolPrices(redisClient, symbolKey, lastPrice, symbolPrices, updatesPrevious)
 	if err != nil {
-		return err
+		return errors.New("Error updating symbol prices: " + err.Error())
 	}
 	return nil
 }
 
-func updateSymbolPrices(redisClient *redisDb.RedisClient, symbol string, lastPrice float64, symbolPrices string) error {
+func updateSymbolPrices(redisClient *redisDb.RedisClient, symbol string, lastPrice float64, symbolPrices string, updatesPrevious bool) error {
 	symbolValues := dtos.IntraDayPrices{}
 	err := symbolValues.FromJSON(symbolPrices)
 	if err != nil {
 		return err
+	}
+	if updatesPrevious {
+		symbolValues.Previous = symbolValues.Current
 	}
 	symbolValues.Current = lastPrice
 	sortSymbolPrices(&symbolValues)
@@ -83,12 +96,12 @@ func createSymbolPrices(redisClient *redisDb.RedisClient, symbol string, lastPri
 	newSymbolValues := dtos.NewIntraDayPrices(lastPrice, lastPrice, lastPrice, lastPrice)
 	newSymbolValuesJson, err := newSymbolValues.ToJSON()
 	if err != nil {
-		return err
+		return errors.New("Error marshalling new symbol values: " + err.Error())
 	}
 	symbolKey := fmt.Sprintf("%s_%s", "INTRA-DAY", symbol)
 	err = redisRepository.SetIntraDaySymbolPrices(redisClient, symbolKey, newSymbolValuesJson)
 	if err != nil {
-		return err
+		return errors.New("Error setting new symbol values: " + err.Error())
 	}
 	return nil
 }

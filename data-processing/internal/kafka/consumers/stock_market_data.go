@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	redisDb "github.com/ginos1998/financing-market-monitor/data-processing/config/redis"
 	"github.com/ginos1998/financing-market-monitor/data-processing/internal/models/dtos"
@@ -17,7 +18,8 @@ func (c *Consumer) InitStockMarketDataConsumer(ctx context.Context, redisClient 
 		logger.Fatalf("Failed to subscribe to topic %s: %v", topic, err)
 	}
 	logger.Info("Consumer subscribed to topic: " + topic)
-
+	updatesPrevious := true
+	startTime := time.Now().Unix()
 	for {
 		select {
 		case <-ctx.Done():
@@ -45,12 +47,16 @@ func (c *Consumer) InitStockMarketDataConsumer(ctx context.Context, redisClient 
 				logger.Warn("No trades data found")
 				continue
 			}
-			err = redisServices.CreateOrUpdateSymbolPrices(&redisClient, tradesData.Trades[0].Symbol, tradesData.Trades[0].LastPrice)
+			err = redisServices.CreateOrUpdateSymbolPrices(&redisClient, tradesData.Trades[0].Symbol, tradesData.Trades[0].LastPrice, updatesPrevious)
 			if err != nil {
 				logger.Error("redisService: Failed to update symbol prices: ", err)
 			}
-
 			logger.Info(fmt.Sprintf("Message on %s: Symbol %s LastPrice %v\n", msg.TopicPartition, tradesData.Trades[0].Symbol, tradesData.Trades[0].LastPrice))
+			updatesPrevious = false
+			if time.Now().Unix()-startTime >= 30 {
+				updatesPrevious = true
+				startTime = time.Now().Unix()
+			}
 		}
 	}
 }
